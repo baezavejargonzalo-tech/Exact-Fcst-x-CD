@@ -306,6 +306,17 @@
   .pv-head .field select { width: auto; min-width: 0; max-width: 100%; }
   .pv-total { font-size: 13px; color: var(--muted); }
   .pv-total b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .sum-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; }
+  .sum-box { border-radius: 10px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+  .sum-box.a { background: var(--s1-soft); border-color: var(--s1); }
+  .sum-box.b { background: var(--s2-soft); border-color: var(--s2); }
+  .sum-box.c { background: var(--s3-soft); border-color: var(--s3); }
+  .sum-box .sv { font-family: "Manrope", sans-serif; font-weight: 800; font-size: 24px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .sum-box .sk { font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .sum-box .sk b { color: var(--ink); }
+  .ctl-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+  .ctl-row .field { flex: 1 1 180px; max-width: 280px; }
+  .more { font-size: 12.5px; color: var(--muted); }
   .tbl-wrap { overflow-x: auto; }
   table.pv { border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; min-width: 100%; }
   table.pv th, table.pv td { padding: 6px 10px; border: 1px solid var(--grid); white-space: nowrap; }
@@ -525,6 +536,31 @@
     <section class="panel" id="pvB"></section>
     <section class="panel" id="pvC"></section>
     <section class="panel" id="pvD"></section>
+    <section class="panel" id="pvSku">
+      <h2 id="skuTitle">SKU donde los forecasts son distintos</h2>
+      <p class="panel-sub" id="skuSub"></p>
+      <div class="sum-row" id="skuSummary"></div>
+      <div class="ctl-row">
+        <div class="field">
+          <label for="skuWin">Mostrar</label>
+          <select id="skuWin"></select>
+        </div>
+        <div class="field">
+          <label for="skuSort">Ordenar por</label>
+          <select id="skuSort">
+            <option value="vol" selected>Venta real (mayor primero)</option>
+            <option value="gap">Diferencia de exactitud</option>
+            <option value="fc">Diferencia entre forecasts (t)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="skuFind">Buscar SKU o producto</label>
+          <input type="text" id="skuFind" placeholder="Ej. 30001986 o NUTRA">
+        </div>
+      </div>
+      <div class="tbl-wrap"><table class="plain" id="tblDiff"></table></div>
+      <div class="more" id="skuMore"></div>
+    </section>
 
     <section class="panel">
       <h2>Exactitud semana a semana</h2>
@@ -655,7 +691,9 @@
     files: [],         // cierres cargados
     last: null,
     recCache: null,
-    diffPair: 0
+    diffPair: 0,
+    skuWin: "all",
+    lastSkuRows: null
   };
 
   function keyOf(cd, sku) {
@@ -985,12 +1023,21 @@
       var recs = recsByWeek.get(w) || [];
       var conv = weekConvention(recs, Fu);
       var sv = inp.universe === "svs" && inp.svs ? (inp.svs.get(w) || new Map()) : null;
+      // Filas anuladas en BASE (FCST 0 y Error 0 aunque hubo venta, ej. el centro D009 de Chillan desde la S36):
+      // su venta se suma a la fila del mismo CD x SKU que lleva el FCST, igual que hace la columna Error de BASE.
+      var isNull = function (rc) { return rc.tb === 0 && rc.ub === 0 && rc.real !== 0; };
+      var extra = new Map(), receiver = new Map();
+      recs.forEach(function (rc) {
+        if (isNull(rc)) { extra.set(rc.key, (extra.get(rc.key) || 0) + rc.real); return; }
+        var cur = receiver.get(rc.key);
+        if (!cur || (!(cur.tb > 0) && rc.tb > 0)) receiver.set(rc.key, rc);
+      });
       recs.forEach(function (rc) {
         if (inp.cdSet && !inp.cdSet.has(rc.cd)) return;
         if (sv && !sv.has(rc.key)) return;
         if (filt && !filt(rc.sku)) return;
-        // fila anulada en BASE (FCST 0 y Error 0 aunque hubo venta, ej. el segundo centro de Chillan): no cuenta para nadie
-        if (rc.tb === 0 && rc.ub === 0 && rc.real !== 0) return;
+        if (isNull(rc)) return;
+        var real = rc.real + (receiver.get(rc.key) === rc ? (extra.get(rc.key) || 0) : 0);
         var fu = Fu ? (Fu.get(rc.key) || 0) : 0;
         var share = rc.tb !== null && (rc.tb > 0 || fu > 0) ? (rc.tb > 0 ? 1 : 0) : (conv === "all" || rc.first ? 1 : 0);
         var f = F.map(function (x, q) {
@@ -999,7 +1046,7 @@
         });
         // el FCST usado lleva el Error tal como esta en BASE (columna U)
         var fixedE = inp.srcs.map(function (src) { return src === "master" && rc.tb !== null && rc.ub !== null ? rc.ub : null; });
-        C.add(w, rc.mes, rc.cd, rc.sku, rc.key, rc.real, f, comp, fixedE);
+        C.add(w, rc.mes, rc.cd, rc.sku, rc.key, real, f, comp, fixedE);
       });
     });
     return finish(C, accMaestro, inp.weeks, hasW);
@@ -1152,6 +1199,74 @@
 
   function diffPairs(K) { return K === 3 ? [[0, 1], [0, 2], [1, 2]] : [[0, 1]]; }
 
+  // SKU x CD donde los dos forecasts del par elegido son distintos, con la exactitud de cada uno
+  function diffSkuRows(res, ia, ib) {
+    return res.bySku.filter(function (s) { return Math.abs(s.f[ia] - s.f[ib]) > 0.0005; }).map(function (s) {
+      var aa = res.accOf(s, ia), ab = res.accOf(s, ib);
+      var winAcc = aa === null || ab === null || Math.abs(aa - ab) < 1e-9 ? -1 : (ab > aa ? ib : ia);
+      var winErr = Math.abs(s.e[ia] - s.e[ib]) < 1e-9 ? -1 : (s.e[ib] < s.e[ia] ? ib : ia);
+      return { s: s, aa: aa, ab: ab, winAcc: winAcc, winErr: winErr };
+    });
+  }
+
+  function renderSkuPanel(res, n, pr, descr) {
+    var ia = pr[0], ib = pr[1], rows = diffSkuRows(res, ia, ib);
+    $("skuTitle").textContent = "SKU donde " + n[ib] + " y " + n[ia] + " son distintos";
+    $("skuSub").innerHTML = "Cada fila es un SKU × CD, sumando las semanas comparadas. La exactitud usa la misma fórmula de las tablas de arriba. " +
+      "El par se elige en <strong>Comparar</strong>, en la tabla de diferencia.";
+    var cnt = {}, vol = {};
+    [ia, ib, -1].forEach(function (k) { cnt[k] = 0; vol[k] = 0; });
+    rows.forEach(function (r) { cnt[r.winAcc]++; vol[r.winAcc] += r.s.r; });
+    var errA = 0, errB = 0;
+    rows.forEach(function (r) { errA += r.s.e[ia]; errB += r.s.e[ib]; });
+    function box(k, title) {
+      var cls = k < 0 ? "" : " " + CLS[k];
+      return '<div class="sum-box' + cls + '"><div class="sk">' + title + '</div><div class="sv">' + nf0.format(cnt[k]) + " SKU × CD</div>" +
+        '<div class="sk">Venta real de esos SKU: <b>' + fmtT(vol[k]) + " t</b></div></div>";
+    }
+    $("skuSummary").innerHTML = rows.length ?
+      box(ib, "Mejor exactitud con " + esc(n[ib])) + box(ia, "Mejor exactitud con " + esc(n[ia])) + box(-1, "Empate") +
+      '<div class="sum-box"><div class="sk">Error absoluto en estos SKU</div><div class="sv">' + fmtT(errB) + " t vs " + fmtT(errA) + " t</div>" +
+      '<div class="sk"><b>' + esc(n[ib]) + "</b> vs <b>" + esc(n[ia]) + "</b>. " + (errB < errA ? esc(n[ib]) : esc(n[ia])) + " se equivocó menos en total.</div></div>" :
+      '<p class="status">No hay SKU donde los dos forecasts sean distintos en las semanas comparadas.</p>';
+
+    var winSel = $("skuWin"), prev = state.skuWin || "all";
+    winSel.innerHTML = '<option value="all">Todos (' + rows.length + ")</option>" +
+      '<option value="b">Donde ganó ' + esc(n[ib]) + " (" + cnt[ib] + ")</option>" +
+      '<option value="a">Donde ganó ' + esc(n[ia]) + " (" + cnt[ia] + ")</option>" +
+      '<option value="t">Empates (' + cnt[-1] + ")</option>";
+    winSel.value = prev;
+    var q = ($("skuFind").value || "").trim().toUpperCase();
+    var list = rows.filter(function (r) {
+      if (prev === "a" && r.winAcc !== ia) return false;
+      if (prev === "b" && r.winAcc !== ib) return false;
+      if (prev === "t" && r.winAcc !== -1) return false;
+      if (q && r.s.sku.indexOf(q) === -1 && (descr.get(r.s.sku) || "").toUpperCase().indexOf(q) === -1) return false;
+      return true;
+    });
+    var sort = $("skuSort").value;
+    list.sort(function (x, y) {
+      if (sort === "gap") return Math.abs((y.ab || 0) - (y.aa || 0)) - Math.abs((x.ab || 0) - (x.aa || 0));
+      if (sort === "fc") return Math.abs(y.s.f[ib] - y.s.f[ia]) - Math.abs(x.s.f[ib] - x.s.f[ia]);
+      return y.s.r - x.s.r;
+    });
+    var LIMIT = 30;
+    var body = list.slice(0, LIMIT).map(function (r) {
+      var s = r.s, d = r.aa === null || r.ab === null ? null : r.ab - r.aa;
+      return "<tr><td>" + esc(s.sku) + '</td><td class="desc">' + esc(descr.get(s.sku) || "") + '</td><td class="txt">' + esc(s.cd) + "</td>" +
+        "<td>" + fmtT(s.r) + "</td><td>" + fmtT(s.f[ia]) + "</td><td>" + fmtT(s.f[ib]) + "</td>" +
+        "<td>" + fmtP(r.aa) + "</td><td>" + fmtP(r.ab) + "</td><td>" + (d === null ? "–" : fmtPP(d)) + "</td>" +
+        '<td class="txt">' + chip(r.winAcc, n) + '</td><td class="txt">' + chip(r.winErr, n) + "</td></tr>";
+    }).join("");
+    $("tblDiff").innerHTML = '<thead><tr><th>SKU</th><th class="txt">Descripción</th><th class="txt">CD</th><th>Real (t)</th>' +
+      "<th>" + esc(n[ia]) + " (t)</th><th>" + esc(n[ib]) + " (t)</th><th>Exact. " + esc(n[ia]) + "</th><th>Exact. " + esc(n[ib]) + "</th><th>Dif. (pp)</th>" +
+      '<th class="txt">Mejor exactitud</th><th class="txt">Menor error</th></tr></thead><tbody>' +
+      (body || '<tr><td colspan="11">Sin filas para este filtro.</td></tr>') + "</tbody>";
+    $("skuMore").textContent = list.length > LIMIT ? "Mostrando " + LIMIT + " de " + nf0.format(list.length) + ". El Excel descargable trae todas (hoja \"SKU distintos\")." :
+      (list.length ? nf0.format(list.length) + " fila(s)." : "");
+    state.lastSkuRows = { rows: rows, ia: ia, ib: ib };
+  }
+
   function render(res, isDemo, descr) {
     var K = res.K, n = names(K);
     state.last = { res: res, names: n, demo: isDemo, descr: descr };
@@ -1240,6 +1355,7 @@
     $("pvD").innerHTML = panelHtml("Diferencia en puntos de exactitud", "Positivo = " + esc(n[pr[1]]) + " fue más exacto (su color); negativo = " + esc(n[pr[0]]) + " fue más exacto (su color).",
       null, pd, function (v) { return v === null ? "–" : fmtPP(v); }, divScale(all(pd), COLVAR[pr[0]], COLVAR[pr[1]]), "Puntos de diferencia", sel);
     $("diffSel").addEventListener("change", function () { state.diffPair = parseInt(this.value, 10); render(res, isDemo, descr); });
+    renderSkuPanel(res, n, pr, descr);
 
     $("legend").innerHTML = n.map(function (nm, i) { return '<span><i class="' + CLS[i] + '"></i>' + esc(nm) + "</span>"; }).join("");
     drawChart(ws, n);
@@ -1496,6 +1612,10 @@
   });
   ["nWeeks", "universe", "method", "colMode", "fTipo", "fGrupo", "fCat"].forEach(function (id) { $(id).addEventListener("change", refresh); });
   $("fSku").addEventListener("change", refresh);
+  function rerenderSku() { var L = state.last; if (L) renderSkuPanel(L.res, L.names, diffPairs(L.res.K)[state.diffPair || 0], L.descr); }
+  $("skuWin").addEventListener("change", function () { state.skuWin = this.value; rerenderSku(); });
+  $("skuSort").addEventListener("change", rerenderSku);
+  $("skuFind").addEventListener("input", rerenderSku);
 
   var resizeT = null;
   window.addEventListener("resize", function () {
@@ -1558,6 +1678,23 @@
         .concat(f, f.map(function (v) { return Math.abs(d[4] - v); })));
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(det), sheetName("Detalle", used));
+    diffPairs(res.K).forEach(function (p) {
+      var ia = p[0], ib = p[1];
+      var aoa = [["SKU", "Descripción", "CD", "Real (t)", n[ia] + " (t)", n[ib] + " (t)", "Error " + n[ia] + " (t)", "Error " + n[ib] + " (t)",
+        "Exactitud " + n[ia], "Exactitud " + n[ib], "Diferencia (" + n[ib] + " − " + n[ia] + ")", "Mejor exactitud", "Menor error"]];
+      function nm(k) { return k < 0 ? "Empate" : n[k]; }
+      diffSkuRows(res, ia, ib).sort(function (x, y) { return y.s.r - x.s.r; }).forEach(function (r) {
+        var s = r.s;
+        aoa.push([s.sku, L.descr.get(s.sku) || "", s.cd, s.r, s.f[ia], s.f[ib], s.e[ia], s.e[ib], r.aa, r.ab,
+          r.aa === null || r.ab === null ? null : r.ab - r.aa, nm(r.winAcc), nm(r.winErr)]);
+      });
+      var ws = XLSX.utils.aoa_to_sheet(aoa);
+      for (var R = 1; R < aoa.length; R++) for (var C = 8; C <= 10; C++) {
+        var cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+        if (cell && typeof cell.v === "number") cell.z = C === 10 ? "+0.0%;-0.0%" : "0.0%";
+      }
+      XLSX.utils.book_append_sheet(wb, ws, sheetName("SKU distintos " + n[ib].slice(0, 8) + "-" + n[ia].slice(0, 8), used));
+    });
 
     var out = XLSX.write(wb, { type: "array", bookType: "xlsx" });
     var blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
