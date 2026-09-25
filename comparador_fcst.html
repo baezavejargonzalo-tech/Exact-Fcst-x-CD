@@ -29,6 +29,8 @@
     --s2: #eb6834;
     --s1-soft: #e6effb;
     --s2-soft: #fdebe3;
+    --s3: #1baf7a;
+    --s3-soft: #e1f5ec;
     /* escala de color tipo Excel (rojo - blanco - verde) */
     --heat-lo: #f8696b;
     --heat-mid: #ffffff;
@@ -65,6 +67,8 @@
       --s2: #d95926;
       --s1-soft: #1b2b45;
       --s2-soft: #3a2218;
+      --s3: #199e70;
+      --s3-soft: #15332a;
       --heat-lo: #7a2e33;
       --heat-mid: #171f30;
       --heat-hi: #1f6b45;
@@ -99,6 +103,8 @@
     --s2: #d95926;
     --s1-soft: #1b2b45;
     --s2-soft: #3a2218;
+    --s3: #199e70;
+    --s3-soft: #15332a;
     --heat-lo: #7a2e33;
     --heat-mid: #171f30;
     --heat-hi: #1f6b45;
@@ -149,6 +155,7 @@
   .swatch.real { background: var(--ink); }
   .swatch.a { background: var(--s1); }
   .swatch.b { background: var(--s2); }
+  .swatch.c { background: var(--s3); }
   .swatch.files { background: var(--muted); }
   .card-title { font-family: "Manrope", sans-serif; font-weight: 700; font-size: 16px; }
   .card-sub { color: var(--muted); font-size: 13px; margin: -4px 0 0; line-height: 1.5; }
@@ -229,11 +236,11 @@
   }
   .verdict-sub { color: var(--muted); font-size: 14px; line-height: 1.55; margin: -6px 0 0; max-width: 76ch; }
 
-  .score { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  @media (max-width: 560px) { .score { grid-template-columns: 1fr; } }
+  .score { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
   .side { border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border); background: var(--surface-2); }
   .side.win.a { border-color: var(--s1); background: var(--s1-soft); }
   .side.win.b { border-color: var(--s2); background: var(--s2-soft); }
+  .side.win.c { border-color: var(--s3); background: var(--s3-soft); }
   .side-head { display: flex; align-items: center; gap: 8px; }
   .side-name { font-weight: 700; font-size: 14px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
   .crown {
@@ -260,6 +267,7 @@
   .legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
   .legend i.a { background: var(--s1); }
   .legend i.b { background: var(--s2); }
+  .legend i.c { background: var(--s3); }
 
   .chart { position: relative; width: 100%; }
   .chart svg { display: block; width: 100%; height: 260px; overflow: visible; }
@@ -269,9 +277,11 @@
   .chart .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
   .chart .ln.a { stroke: var(--s1); }
   .chart .ln.b { stroke: var(--s2); }
+  .chart .ln.c { stroke: var(--s3); }
   .chart .dot { stroke: var(--surface); stroke-width: 2; }
   .chart .dot.a { fill: var(--s1); }
   .chart .dot.b { fill: var(--s2); }
+  .chart .dot.c { fill: var(--s3); }
   .chart .cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
   .chart .hit { fill: transparent; cursor: crosshair; }
   .chart .nodata { fill: var(--surface-2); }
@@ -286,11 +296,14 @@
   .tip .t-r i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
   .tip .t-r i.a { background: var(--s1); }
   .tip .t-r i.b { background: var(--s2); }
+  .tip .t-r i.c { background: var(--s3); }
   .tip .t-m { color: var(--muted); margin-top: 4px; }
 
   /* ================= tabla dinamica ================= */
   .pv-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .pv-head .spacer { flex: 1; }
+  .pv-head .field { flex-direction: row; align-items: center; gap: 8px; max-width: 100%; }
+  .pv-head .field select { width: auto; min-width: 0; max-width: 100%; }
   .pv-total { font-size: 13px; color: var(--muted); }
   .pv-total b { color: var(--ink); font-variant-numeric: tabular-nums; }
   .tbl-wrap { overflow-x: auto; }
@@ -326,6 +339,8 @@
   .chip.a i { background: var(--s1); }
   .chip.b { background: var(--s2-soft); color: var(--ink); }
   .chip.b i { background: var(--s2); }
+  .chip.c { background: var(--s3-soft); color: var(--ink); }
+  .chip.c i { background: var(--s3); }
 
   button.cta {
     border: none; border-radius: 10px; background: var(--accent); color: var(--accent-ink);
@@ -337,7 +352,7 @@
   button.cta:active { transform: translateY(1px); }
   button.cta:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
   button.cta:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  .msg { font-size: 12.5px; color: var(--muted); }
+  .msg { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
   .msg.err { color: var(--error); }
   .msg.ok { color: var(--success); }
 
@@ -349,8 +364,8 @@
 <div class="wrap">
   <header class="page">
     <p class="eyebrow">Exactitud · FCST x CD</p>
-    <h1>¿Quién le pega mejor al sell in: el Sistema o el Sugerido CPFR?</h1>
-    <p class="lede">Subí el archivo maestro (la venta real sale de la hoja BASE) y los Cierre x CD de las semanas que querés revisar. De cada cierre se lee la hoja <strong>Sugeridos vs Sistema</strong> y se arma la misma tabla dinámica de Exactitud del maestro para cada forecast, lado a lado.</p>
+    <h1>¿Quién le pega mejor al sell in: el Sistema, el Sugerido CPFR o lo que se usó?</h1>
+    <p class="lede">Subí el archivo maestro y los Cierre x CD de las semanas que querés revisar. Se compara el <strong>FCST Sistema</strong> y el <strong>Sugerido CPFR</strong> (hoja Sugeridos vs Sistema de cada cierre) con el <strong>FCST usado</strong> (hoja FCST del maestro), todos contra la venta real de BASE, con la misma tabla dinámica de Exactitud del maestro.</p>
   </header>
 
   <div class="inputs">
@@ -394,7 +409,7 @@
               <option value="sistema" selected>FCST Sistema (promedio)</option>
               <option value="sugerido">Sugerido CPFR</option>
               <option value="cierre">Cierre final (FCST x CD)</option>
-              <option value="master">Hoja FCST del maestro</option>
+              <option value="master">FCST usado (hoja FCST del maestro)</option>
             </select>
           </div>
           <div class="field">
@@ -410,7 +425,7 @@
               <option value="sistema">FCST Sistema (promedio)</option>
               <option value="sugerido" selected>Sugerido CPFR</option>
               <option value="cierre">Cierre final (FCST x CD)</option>
-              <option value="master">Hoja FCST del maestro</option>
+              <option value="master">FCST usado (hoja FCST del maestro)</option>
             </select>
           </div>
           <div class="field">
@@ -418,11 +433,29 @@
             <input type="text" id="nameB" value="Sugerido CPFR" maxlength="40">
           </div>
         </div>
+        <div class="pair-box">
+          <div class="pair-head"><span class="swatch c"></span><span id="titleC">FCST usado</span></div>
+          <div class="field">
+            <label for="srcC">Forecast</label>
+            <select id="srcC">
+              <option value="sistema">FCST Sistema (promedio)</option>
+              <option value="sugerido">Sugerido CPFR</option>
+              <option value="cierre">Cierre final (FCST x CD)</option>
+              <option value="master" selected>FCST usado (hoja FCST del maestro)</option>
+              <option value="none">(No comparar un tercero)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="nameC">Nombre</label>
+            <input type="text" id="nameC" value="FCST usado" maxlength="40">
+          </div>
+        </div>
       </div>
       <div class="field">
         <label for="universe">Qué SKU × CD entran</label>
         <select id="universe">
-          <option value="fc" selected>Solo los que tienen forecast (en alguno de los dos)</option>
+          <option value="svs" selected>Solo los que aparecen en Sugeridos vs Sistema</option>
+          <option value="fc">Todos los que tienen algún forecast</option>
           <option value="all">Toda la venta real de BASE</option>
         </select>
       </div>
@@ -474,6 +507,7 @@
 
     <section class="panel" id="pvA"></section>
     <section class="panel" id="pvB"></section>
+    <section class="panel" id="pvC"></section>
     <section class="panel" id="pvD"></section>
 
     <section class="panel">
@@ -603,7 +637,8 @@
     meta: new Map(),   // key -> {cd, sku}
     descr: new Map(),  // sku -> descripcion
     files: [],         // cierres cargados
-    last: null
+    last: null,
+    diffPair: 0
   };
 
   function keyOf(cd, sku) {
@@ -789,80 +824,88 @@
   }
 
   // ================= calculo =================
+  // inp.series: [Map sem -> Map key -> ton, ...] (2 o 3 forecasts)
   function compute(inp) {
-    var filt = inp.filter, onlyFc = inp.universe === "fc";
-    var gl = { r: 0, a: 0, b: 0, ea: 0, eb: 0 };
-    var cells = new Map();   // cd -> Map sem -> {r, ea, eb}
-    var cdTot = new Map();   // cd -> {r, ea, eb}
-    var byKey = new Map(), detail = [], weekStats = [];
+    var S = inp.series, K = S.length, filt = inp.filter;
+    function zeros() { var a = []; for (var q = 0; q < K; q++) a.push(0); return a; }
+    var gl = { r: 0, f: zeros(), e: zeros() };
+    var cells = new Map(), cdTot = new Map(), byKey = new Map(), detail = [], weekStats = [];
 
     inp.weeks.forEach(function (w) {
       var R = inp.real.get(w) || new Map();
-      var A = inp.A ? inp.A.get(w) : null, B = inp.B ? inp.B.get(w) : null;
-      var hasA = !!A && A.size > 0, hasB = !!B && B.size > 0, comp = hasA && hasB;
+      var F = S.map(function (m) { return m ? m.get(w) || null : null; });
+      var has = F.map(function (m) { return !!m && m.size > 0; });
+      var comp = has.every(Boolean);
       var keys = new Set();
-      if (!onlyFc) R.forEach(function (v, k) { keys.add(k); });
-      if (A) A.forEach(function (v, k) { keys.add(k); });
-      if (B) B.forEach(function (v, k) { keys.add(k); });
-      var ws = { sem: w, hasA: hasA, hasB: hasB, comp: comp, r: 0, a: 0, b: 0, ea: 0, eb: 0 };
+      if (inp.universe === "all") R.forEach(function (v, k) { keys.add(k); });
+      if (inp.universe === "svs" && inp.svs) { var sv = inp.svs.get(w); if (sv) sv.forEach(function (v, k) { keys.add(k); }); }
+      else F.forEach(function (m) { if (m) m.forEach(function (v, k) { keys.add(k); }); });
+      var ws = { sem: w, has: has, comp: comp, r: 0, f: zeros(), e: zeros() };
       keys.forEach(function (k) {
         var m = inp.meta.get(k);
         if (filt && !filt(m.sku)) return;
-        var r = R.get(k) || 0, a = A ? (A.get(k) || 0) : 0, b = B ? (B.get(k) || 0) : 0;
-        if (!r && !a && !b) return;
-        var ea = Math.abs(r - a), eb = Math.abs(r - b);
-        ws.r += r; ws.a += a; ws.b += b; ws.ea += ea; ws.eb += eb;
+        var r = R.get(k) || 0;
+        var f = F.map(function (x) { return x ? (x.get(k) || 0) : 0; });
+        if (!r && f.every(function (v) { return !v; })) return;
+        var e = f.map(function (v) { return Math.abs(r - v); });
+        ws.r += r;
+        for (var q = 0; q < K; q++) { ws.f[q] += f[q]; ws.e[q] += e[q]; }
         if (!comp) return;
         var row = cells.get(m.cd);
-        if (!row) { row = new Map(); cells.set(m.cd, row); cdTot.set(m.cd, { r: 0, a: 0, b: 0, ea: 0, eb: 0 }); }
+        if (!row) { row = new Map(); cells.set(m.cd, row); cdTot.set(m.cd, { r: 0, f: zeros(), e: zeros() }); }
         var c = row.get(w);
-        if (!c) { c = { r: 0, ea: 0, eb: 0 }; row.set(w, c); }
-        c.r += r; c.ea += ea; c.eb += eb;
+        if (!c) { c = { r: 0, e: zeros() }; row.set(w, c); }
         var t = cdTot.get(m.cd);
-        t.r += r; t.a += a; t.b += b; t.ea += ea; t.eb += eb;
-        detail.push([w, m.cd, m.sku, r, a, b]);
-        var s = byKey.get(k);
-        if (!s) { s = { cd: m.cd, sku: m.sku, r: 0, a: 0, b: 0, ea: 0, eb: 0 }; byKey.set(k, s); }
-        s.r += r; s.a += a; s.b += b; s.ea += ea; s.eb += eb;
+        var sk = byKey.get(k);
+        if (!sk) { sk = { cd: m.cd, sku: m.sku, r: 0, f: zeros(), e: zeros() }; byKey.set(k, sk); }
+        c.r += r; t.r += r; sk.r += r;
+        for (q = 0; q < K; q++) { c.e[q] += e[q]; t.f[q] += f[q]; t.e[q] += e[q]; sk.f[q] += f[q]; sk.e[q] += e[q]; }
+        detail.push([w, m.cd, m.sku, r].concat(f));
       });
-      ws.accA = hasA ? acc(ws.r, ws.ea) : null;
-      ws.accB = hasB ? acc(ws.r, ws.eb) : null;
-      if (comp) { gl.r += ws.r; gl.a += ws.a; gl.b += ws.b; gl.ea += ws.ea; gl.eb += ws.eb; }
+      ws.acc = ws.e.map(function (e, q) { return has[q] ? acc(ws.r, e) : null; });
+      if (comp) { gl.r += ws.r; for (var q = 0; q < K; q++) { gl.f[q] += ws.f[q]; gl.e[q] += ws.e[q]; } }
       weekStats.push(ws);
     });
 
     var comps = weekStats.filter(function (w) { return w.comp; });
-    var winsA = 0, winsB = 0;
-    comps.forEach(function (w) { if (w.accA > w.accB) winsA++; else if (w.accB > w.accA) winsB++; });
+    var wins = zeros();
+    comps.forEach(function (w) { var b = bestOf(w.acc, true); if (b >= 0) wins[b]++; });
+    gl.acc = gl.e.map(function (e) { return acc(gl.r, e); });
+    gl.bias = gl.f.map(function (f) { return gl.r > 0 ? (f - gl.r) / gl.r : null; });
     var cds = Array.from(cdTot.keys()).sort(function (x, y) { return x.localeCompare(y, "es"); });
+    function spread(o) { return Math.max.apply(null, o.e) - Math.min.apply(null, o.e); }
     return {
-      weekStats: weekStats, compWeeks: comps.length, winsA: winsA, winsB: winsB,
-      g: {
-        r: gl.r, a: gl.a, b: gl.b, ea: gl.ea, eb: gl.eb,
-        accA: acc(gl.r, gl.ea), accB: acc(gl.r, gl.eb),
-        biasA: gl.r > 0 ? (gl.a - gl.r) / gl.r : null, biasB: gl.r > 0 ? (gl.b - gl.r) / gl.r : null
-      },
+      K: K, weekStats: weekStats, compWeeks: comps.length, wins: wins, g: gl,
       cds: cds, cells: cells, cdTot: cdTot,
-      bySku: Array.from(byKey.values()).sort(function (x, y) { return Math.abs(y.ea - y.eb) - Math.abs(x.ea - x.eb); }),
+      bySku: Array.from(byKey.values()).sort(function (x, y) { return spread(y) - spread(x); }),
       detail: detail
     };
   }
+  // indice del mejor valor (mayor si high=true, menor si no); -1 si empate o sin datos
+  function bestOf(vals, high) {
+    var bi = -1, bv = null, tie = false;
+    vals.forEach(function (v, i) {
+      if (v === null || v === undefined) return;
+      if (bv === null || (high ? v > bv : v < bv)) { bv = v; bi = i; tie = false; }
+      else if (v === bv) tie = true;
+    });
+    return tie ? -1 : bi;
+  }
 
-  // tabla dinamica: filas CD, columnas mes/semana, valores de exactitud (o diferencia)
+  // tabla dinamica: filas CD, columnas mes/semana. which = indice de forecast, o [i, j] para diferencia j - i
   function pivotMatrix(res, which) {
     var weeks = res.weekStats.filter(function (w) { return w.comp; }).map(function (w) { return w.sem; });
     function val(o) {
       if (!o || !(o.r > 0)) return null;
-      var a = acc(o.r, o.ea), b = acc(o.r, o.eb);
-      return which === "a" ? a : which === "b" ? b : b - a;
+      if (Array.isArray(which)) return acc(o.r, o.e[which[1]]) - acc(o.r, o.e[which[0]]);
+      return acc(o.r, o.e[which]);
     }
     var rows = res.cds.map(function (cd) {
       var row = res.cells.get(cd);
       return { cd: cd, vals: weeks.map(function (w) { return val(row.get(w)); }), tot: val(res.cdTot.get(cd)) };
     });
     var wsBy = new Map(res.weekStats.map(function (w) { return [w.sem, w]; }));
-    var totRow = weeks.map(function (w) { return val(wsBy.get(w)); });
-    return { weeks: weeks, rows: rows, totRow: totRow, grand: val(res.g) };
+    return { weeks: weeks, rows: rows, totRow: weeks.map(function (w) { return val(wsBy.get(w)); }), grand: val(res.g) };
   }
 
   // ================= colores =================
@@ -888,13 +931,14 @@
       return mx === md ? mid : mix(mid, hi, (x - md) / (mx - md));
     };
   }
-  function divScale(values) {
+  // diferencia: color del forecast que gana en cada celda
+  function divScale(values, colNeg, colPos) {
     var mx = 0;
     values.forEach(function (x) { if (x !== null) mx = Math.max(mx, Math.abs(x)); });
-    var ca = cssVar("--div-a"), cm = cssVar("--div-mid"), cb = cssVar("--div-b");
+    var cm = cssVar("--div-mid"), ca = cssVar(colNeg), cb = cssVar(colPos);
     return function (x) {
       if (x === null || mx === 0) return "";
-      var t = Math.min(1, Math.abs(x) / mx);
+      var t = Math.min(1, Math.abs(x) / mx) * 0.75;
       return x < 0 ? mix(cm, ca, t) : mix(cm, cb, t);
     };
   }
@@ -907,9 +951,9 @@
     var skus = [];
     for (var i = 0; i < 30; i++) skus.push(String(30000100 + i * 13));
     var weeks = [202631, 202632, 202633, 202634, 202635, 202636, 202637, 202638];
-    var meta = new Map(), real = new Map(), A = new Map(), B = new Map(), descr = new Map();
+    var meta = new Map(), real = new Map(), A = new Map(), B = new Map(), C = new Map(), descr = new Map();
     skus.forEach(function (s, i) { descr.set(s, "PRODUCTO DE EJEMPLO " + (i + 1)); });
-    weeks.forEach(function (w, wi) {
+    weeks.forEach(function (w) {
       cds.forEach(function (cd, ci) {
         skus.forEach(function (s, si) {
           var k = cd + SEP + s;
@@ -918,25 +962,30 @@
           var r = rnd() < 0.12 ? 0 : Math.max(0, vol * (0.4 + rnd() * 1.2));
           addTo(real, w, k, r);
           addTo(A, w, k, Math.max(0, vol * (0.55 + rnd() * 0.9)));
-          addTo(B, w, k, Math.max(0, r * (1 + (rnd() - 0.45) * (ci === 3 ? 1.5 : 1.0)) + (rnd() < 0.1 ? vol : 0)));
+          var b = Math.max(0, r * (1 + (rnd() - 0.45) * (ci === 3 ? 1.5 : 1.0)) + (rnd() < 0.1 ? vol : 0));
+          addTo(B, w, k, b);
+          addTo(C, w, k, rnd() < 0.8 ? b : Math.max(0, b * (0.6 + rnd() * 0.9)));
         });
       });
     });
-    return { weeks: weeks, real: real, A: A, B: B, meta: meta, descr: descr };
+    return { weeks: weeks, real: real, series: [A, B, C], meta: meta, descr: descr };
   }
 
   // ================= render =================
-  function names() {
-    return { A: $("nameA").value.trim() || "Forecast A", B: $("nameB").value.trim() || "Forecast B" };
+  var IDS = ["A", "B", "C"], CLS = ["a", "b", "c"], COLVAR = ["--s1", "--s2", "--s3"];
+  function activeSlots() {
+    return IDS.filter(function (id) { return id !== "C" || $("srcC").value !== "none"; });
   }
-  function chip(which, n) {
-    if (which === "a") return '<span class="chip a"><i></i>' + esc(n.A) + "</span>";
-    if (which === "b") return '<span class="chip b"><i></i>' + esc(n.B) + "</span>";
-    return '<span class="chip">Empate</span>';
+  function names(K) {
+    return IDS.slice(0, K).map(function (id, i) { return $("name" + id).value.trim() || "Forecast " + id; });
   }
+  function chip(i, n) {
+    if (i < 0) return '<span class="chip">Empate</span>';
+    return '<span class="chip ' + CLS[i] + '"><i></i>' + esc(n[i]) + "</span>";
+  }
+  function listNames(arr) { return arr.length <= 1 ? arr.join("") : arr.slice(0, -1).join(", ") + " y " + arr[arr.length - 1]; }
 
   function pivotHtml(pm, fmtCell, colorFn, cornerLabel) {
-    // encabezado de meses agrupando semanas consecutivas del mismo mes
     var groups = [];
     pm.weeks.forEach(function (w) {
       var m = monthOfSem(w);
@@ -948,9 +997,8 @@
       '<th class="tcol" rowspan="2">Total general</th></tr>' +
       '<tr><th class="corner">Centro de Distribución</th>' + pm.weeks.map(function (w) { return "<th>" + w + "</th>"; }).join("") + "</tr></thead>";
     function td(v, extra) {
-      var bg = colorFn(v);
-      return "<td" + (extra ? ' class="' + extra + (v === null ? " na" : "") + '"' : v === null ? ' class="na"' : "") +
-        (bg ? ' style="background:' + bg + '"' : "") + ">" + fmtCell(v) + "</td>";
+      var bg = colorFn(v), cls = [extra, v === null ? "na" : ""].filter(Boolean).join(" ");
+      return "<td" + (cls ? ' class="' + cls + '"' : "") + (bg ? ' style="background:' + bg + '"' : "") + ">" + fmtCell(v) + "</td>";
     }
     var b = pm.rows.map(function (r) {
       return "<tr><th>" + esc(r.cd || "(sin CD)") + "</th>" + r.vals.map(function (v) { return td(v); }).join("") + td(r.tot, "tcol") + "</tr>";
@@ -959,110 +1007,121 @@
     return '<div class="tbl-wrap"><table class="pv">' + h + "<tbody>" + b + "</tbody></table></div>";
   }
 
+  function diffPairs(K) { return K === 3 ? [[0, 1], [0, 2], [1, 2]] : [[0, 1]]; }
+
   function render(res, isDemo, descr) {
-    var n = names();
+    var K = res.K, n = names(K);
     state.last = { res: res, names: n, demo: isDemo, descr: descr };
-    $("titleA").textContent = n.A;
-    $("titleB").textContent = n.B;
+    IDS.forEach(function (id, i) { $("title" + id).textContent = i < K ? n[i] : (id === "C" ? "Sin tercer forecast" : ""); });
     $("modePill").textContent = isDemo ? "Datos de ejemplo" : "Tus datos";
     $("modePill").classList.toggle("live", !isDemo);
     $("btnExport").disabled = isDemo || !res.compWeeks;
 
     var g = res.g, ws = res.weekStats;
-    var winner = null;
-    if (res.compWeeks && g.accA !== null && g.accB !== null) winner = g.accA > g.accB ? "a" : g.accB > g.accA ? "b" : "tie";
-
+    var best = res.compWeeks ? bestOf(g.acc, true) : -1;
     var compW = ws.filter(function (w) { return w.comp; });
     var rango = compW.length ? fmtSem(compW[0].sem) + " a " + fmtSem(compW[compW.length - 1].sem) + " de " + Math.floor(compW[compW.length - 1].sem / 100) : "";
     if (!res.compWeeks) {
-      $("verdict").textContent = "Todavía no hay semanas con los dos forecasts y venta real.";
-      $("verdictSub").textContent = "Revisá que los cierres correspondan a semanas que ya están en BASE. El cierre 202639 trae el forecast de la SEM 40, así que se puede medir cuando BASE tenga la semana 202640.";
-    } else if (winner === "tie") {
-      $("verdict").textContent = "Empate: los dos forecasts tuvieron la misma exactitud.";
+      $("verdict").textContent = "Todavía no hay semanas con todos los forecasts y venta real.";
+      $("verdictSub").textContent = "Revisá que los cierres correspondan a semanas que ya están en BASE y en la hoja FCST del maestro. El cierre 202639 trae el forecast de la SEM 40, así que se puede medir cuando BASE tenga la semana 202640.";
+    } else if (best < 0) {
+      $("verdict").textContent = "Empate en exactitud.";
       $("verdictSub").textContent = res.compWeeks + " semanas comparadas (" + rango + ").";
     } else {
-      var wName = winner === "a" ? n.A : n.B, lName = winner === "a" ? n.B : n.A;
-      var wAcc = winner === "a" ? g.accA : g.accB, lAcc = winner === "a" ? g.accB : g.accA;
-      var wWins = winner === "a" ? res.winsA : res.winsB;
-      $("verdict").textContent = wName + " fue más exacto: " + fmtP(wAcc) + " contra " + fmtP(lAcc) + ".";
-      $("verdictSub").textContent = "Son " + nf1.format(Math.abs(wAcc - lAcc) * 100) + " puntos de ventaja sobre " + lName +
-        " en " + res.compWeeks + " semana(s) (" + rango + "). Ganó " + wWins + " de " + res.compWeeks + " semanas.";
+      var others = [];
+      for (var q = 0; q < K; q++) if (q !== best) others.push(fmtP(g.acc[q]) + " de " + n[q]);
+      $("verdict").textContent = n[best] + " fue el más exacto: " + fmtP(g.acc[best]) + " contra " + listNames(others) + ".";
+      $("verdictSub").textContent = "En " + res.compWeeks + " semana(s) (" + rango + "). Semanas ganadas: " +
+        n.map(function (nm, i) { return nm + " " + res.wins[i]; }).join(", ") + ".";
     }
 
-    function side(which) {
-      var isA = which === "a";
-      var name = isA ? n.A : n.B;
-      var a = isA ? g.accA : g.accB, bias = isA ? g.biasA : g.biasB, err = isA ? g.ea : g.eb, tot = isA ? g.a : g.b;
-      var wins = isA ? res.winsA : res.winsB;
+    $("score").innerHTML = n.map(function (name, i) {
+      var cls = CLS[i], a = g.acc[i], bias = g.bias[i];
       var biasTxt = bias === null ? "–" : (bias > 0 ? "+" : bias < 0 ? "−" : "") + nf1.format(Math.abs(bias * 100)) + " %";
       var biasHint = bias === null ? "" : bias > 0.005 ? "sobrestima" : bias < -0.005 ? "subestima" : "sin sesgo";
-      return '<div class="side ' + which + (winner === which ? " win" : "") + '">' +
-        '<div class="side-head"><span class="swatch ' + which + '"></span><span class="side-name">' + esc(name) + "</span>" +
-        (winner === which ? '<span class="crown">Más exacto</span>' : "") + "</div>" +
+      return '<div class="side ' + cls + (best === i ? " win" : "") + '">' +
+        '<div class="side-head"><span class="swatch ' + cls + '"></span><span class="side-name">' + esc(name) + "</span>" +
+        (best === i ? '<span class="crown">Más exacto</span>' : "") + "</div>" +
         '<div><div class="big">' + fmtP(a) + '</div><div class="big-l">Exactitud del período</div></div>' +
         '<div class="kv">' +
         '<div><div class="v">' + biasTxt + '</div><div class="k">Sesgo (' + biasHint + ")</div></div>" +
-        '<div><div class="v">' + (res.compWeeks ? wins + " de " + res.compWeeks : "–") + '</div><div class="k">Semanas ganadas</div></div>' +
-        '<div><div class="v">' + (res.compWeeks ? fmtT(err) + " t" : "–") + '</div><div class="k">Error absoluto total</div></div>' +
-        '<div><div class="v">' + (res.compWeeks ? fmtT(tot) + " t" : "–") + '</div><div class="k">Forecast total (real ' + (res.compWeeks ? fmtT(g.r) : "–") + " t)</div></div>" +
+        '<div><div class="v">' + (res.compWeeks ? res.wins[i] + " de " + res.compWeeks : "–") + '</div><div class="k">Semanas ganadas</div></div>' +
+        '<div><div class="v">' + (res.compWeeks ? fmtT(g.e[i]) + " t" : "–") + '</div><div class="k">Error absoluto total</div></div>' +
+        '<div><div class="v">' + (res.compWeeks ? fmtT(g.f[i]) + " t" : "–") + '</div><div class="k">Forecast total (real ' + (res.compWeeks ? fmtT(g.r) : "–") + " t)</div></div>" +
         "</div></div>";
-    }
-    $("score").innerHTML = side("a") + side("b");
+    }).join("");
 
     var notes = [];
     if (isDemo) notes.push("Estos números son <strong>de ejemplo</strong>. Subí el maestro y los Cierre x CD para ver los reales.");
     var missing = ws.filter(function (w) { return !w.comp; });
     if (missing.length && !isDemo) {
-      notes.push("No entran " + missing.length + " semana(s) porque les falta un forecast: " +
-        missing.map(function (w) { return "<strong>" + fmtSem(w.sem) + "</strong> (" + (!w.hasA && !w.hasB ? "faltan los dos" : !w.hasA ? "falta " + esc(n.A) : "falta " + esc(n.B)) + ")"; }).join(", ") + ".");
+      notes.push("No entran " + missing.length + " semana(s) porque les falta algún forecast: " +
+        missing.map(function (w) {
+          var falt = n.filter(function (nm, i) { return !w.has[i]; });
+          return "<strong>" + fmtSem(w.sem) + "</strong> (falta " + esc(listNames(falt)) + ")";
+        }).join(", ") + ".");
     }
     if (currentFilter()) notes.push("Hay filtros activos: los números corresponden solo a los SKU filtrados.");
     $("notes").innerHTML = notes.join("<br>");
     $("notes").hidden = !notes.length;
     $("notes").classList.toggle("warn", !isDemo && missing.length > 0);
 
-    // tablas dinamicas
-    var pA = pivotMatrix(res, "a"), pB = pivotMatrix(res, "b"), pD = pivotMatrix(res, "d");
+    // tablas dinamicas de exactitud, todas con la misma escala de color
+    var pms = n.map(function (nm, i) { return pivotMatrix(res, i); });
     function all(pm) { var v = [pm.grand].concat(pm.totRow); pm.rows.forEach(function (r) { v = v.concat(r.vals, [r.tot]); }); return v; }
-    var heat = heatScale(all(pA).concat(all(pB))); // misma escala para las dos, para que los colores se puedan comparar
-    var dsc = divScale(all(pD));
-    function panel(id, title, sub, which, pm, fmt, col, corner) {
-      var tot = pm.grand;
-      $(id).innerHTML = '<div class="pv-head">' + (which ? '<span class="swatch ' + which + '"></span>' : "") + "<h2>" + esc(title) + '</h2><span class="spacer"></span>' +
-        (tot !== null ? '<span class="pv-total">Total general <b>' + fmt(tot) + "</b></span>" : "") + "</div>" +
+    var heat = heatScale([].concat.apply([], pms.map(all)));
+    function panelHtml(title, sub, cls, pm, fmt, col, corner, extraHead) {
+      return '<div class="pv-head">' + (cls ? '<span class="swatch ' + cls + '"></span>' : "") + "<h2>" + esc(title) + '</h2><span class="spacer"></span>' +
+        (extraHead || "") + (pm.grand !== null ? '<span class="pv-total">Total general <b>' + fmt(pm.grand) + "</b></span>" : "") + "</div>" +
         '<p class="panel-sub">' + sub + "</p>" +
         (pm.weeks.length ? pivotHtml(pm, fmt, col, corner) : '<p class="status">Sin semanas comparables todavía.</p>');
     }
-    panel("pvA", "Exactitud · " + n.A, "Misma tabla que la hoja Exactitud del maestro. Rojo = peor, verde = mejor. La escala de colores es la misma en las dos tablas.", "a", pA, fmtP0, heat, "Suma de Exactitud");
-    panel("pvB", "Exactitud · " + n.B, "Misma escala de colores que la tabla de arriba, así un mismo color significa la misma exactitud.", "b", pB, fmtP0, heat, "Suma de Exactitud");
-    panel("pvD", "Diferencia: " + n.B + " − " + n.A, "En puntos de exactitud. Positivo (naranjo) = " + esc(n.B) + " fue más exacto; negativo (azul) = " + esc(n.A) + " fue más exacto.", null, pD,
-      function (v) { return v === null ? "–" : fmtPP(v); }, dsc, "Puntos de diferencia");
+    IDS.forEach(function (id, i) {
+      var el = $("pv" + id);
+      el.hidden = i >= K;
+      if (i >= K) { el.innerHTML = ""; return; }
+      el.innerHTML = panelHtml("Exactitud · " + n[i],
+        i === 0 ? "Misma tabla que la hoja Exactitud del maestro. Rojo = peor, verde = mejor. La escala de colores es la misma en todas las tablas." :
+          "Misma escala de colores que la tabla de arriba: un mismo color es la misma exactitud.",
+        CLS[i], pms[i], fmtP0, heat, "Suma de Exactitud");
+    });
 
-    $("legend").innerHTML = '<span><i class="a"></i>' + esc(n.A) + '</span><span><i class="b"></i>' + esc(n.B) + "</span>";
+    // diferencia entre dos forecasts (elegible)
+    var pairs = diffPairs(K);
+    if (state.diffPair >= pairs.length) state.diffPair = 0;
+    var pr = pairs[state.diffPair || 0], pd = pivotMatrix(res, pr);
+    var sel = '<div class="field"><label for="diffSel">Comparar</label><select id="diffSel">' +
+      pairs.map(function (p, i) { return '<option value="' + i + '"' + (i === (state.diffPair || 0) ? " selected" : "") + ">" + esc(n[p[1]]) + " − " + esc(n[p[0]]) + "</option>"; }).join("") + "</select></div>";
+    $("pvD").innerHTML = panelHtml("Diferencia en puntos de exactitud", "Positivo = " + esc(n[pr[1]]) + " fue más exacto (su color); negativo = " + esc(n[pr[0]]) + " fue más exacto (su color).",
+      null, pd, function (v) { return v === null ? "–" : fmtPP(v); }, divScale(all(pd), COLVAR[pr[0]], COLVAR[pr[1]]), "Puntos de diferencia", sel);
+    $("diffSel").addEventListener("change", function () { state.diffPair = parseInt(this.value, 10); render(res, isDemo, descr); });
+
+    $("legend").innerHTML = n.map(function (nm, i) { return '<span><i class="' + CLS[i] + '"></i>' + esc(nm) + "</span>"; }).join("");
     drawChart(ws, n);
 
     var skuRows = res.bySku.slice(0, 15).map(function (s) {
-      return "<tr><td>" + esc(s.sku) + '</td><td class="desc">' + esc(descr.get(s.sku) || "") + '</td><td class="txt">' + esc(s.cd) + "</td><td>" + fmtT(s.r) +
-        "</td><td>" + fmtT(s.a) + "</td><td>" + fmtT(s.b) + "</td><td>" + fmtT(s.ea) + "</td><td>" + fmtT(s.eb) + '</td><td class="txt">' + chip(s.ea < s.eb ? "a" : s.eb < s.ea ? "b" : "t", n) + "</td></tr>";
+      return "<tr><td>" + esc(s.sku) + '</td><td class="desc">' + esc(descr.get(s.sku) || "") + '</td><td class="txt">' + esc(s.cd) + "</td><td>" + fmtT(s.r) + "</td>" +
+        s.f.map(function (v) { return "<td>" + fmtT(v) + "</td>"; }).join("") + s.e.map(function (v) { return "<td>" + fmtT(v) + "</td>"; }).join("") +
+        '<td class="txt">' + chip(bestOf(s.e, false), n) + "</td></tr>";
     }).join("");
-    $("tblSku").innerHTML = '<thead><tr><th>SKU</th><th class="txt">Descripción</th><th class="txt">CD</th><th>Real</th><th>' + esc(n.A) + "</th><th>" + esc(n.B) +
-      "</th><th>Error " + esc(n.A) + "</th><th>Error " + esc(n.B) + '</th><th class="txt">Mejor</th></tr></thead><tbody>' +
-      (skuRows || '<tr><td colspan="9">Sin semanas comparables.</td></tr>') + "</tbody>";
+    $("tblSku").innerHTML = '<thead><tr><th>SKU</th><th class="txt">Descripción</th><th class="txt">CD</th><th>Real</th>' +
+      n.map(function (nm) { return "<th>" + esc(nm) + "</th>"; }).join("") + n.map(function (nm) { return "<th>Error " + esc(nm) + "</th>"; }).join("") +
+      '<th class="txt">Mejor</th></tr></thead><tbody>' + (skuRows || '<tr><td colspan="' + (5 + 2 * K) + '">Sin semanas comparables.</td></tr>') + "</tbody>";
   }
 
   var SVGNS = "http://www.w3.org/2000/svg";
   function drawChart(ws, n) {
-    var box = $("chart");
+    var box = $("chart"), K = n.length;
     box.innerHTML = "";
     var W = Math.max(300, box.clientWidth || 700), H = 260;
     var m = { t: 16, r: 58, b: 30, l: 44 };
     var iw = W - m.l - m.r, ih = H - m.t - m.b;
     var vals = [];
-    ws.forEach(function (w) { if (w.accA !== null) vals.push(w.accA); if (w.accB !== null) vals.push(w.accB); });
+    ws.forEach(function (w) { w.acc.forEach(function (v) { if (v !== null) vals.push(v); }); });
     var svg = document.createElementNS(SVGNS, "svg");
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     svg.setAttribute("role", "img");
-    svg.setAttribute("aria-label", "Exactitud semanal de " + n.A + " y " + n.B);
+    svg.setAttribute("aria-label", "Exactitud semanal de " + listNames(n));
     function el(tag, attrs, parent) {
       var e = document.createElementNS(SVGNS, tag);
       for (var k in attrs) e.setAttribute(k, attrs[k]);
@@ -1096,25 +1155,24 @@
     });
     var cross = el("line", { x1: 0, x2: 0, y1: m.t, y2: m.t + ih, "class": "cross", visibility: "hidden" });
     var ends = [];
-    [["a", "accA"], ["b", "accB"]].forEach(function (sp) {
-      var cls = sp[0], key = sp[1], d = "", pen = false, lastI = -1;
+    for (var q = 0; q < K; q++) (function (q) {
+      var cls = CLS[q], d = "", pen = false, lastI = -1;
       ws.forEach(function (w, i) {
-        var val = w[key];
+        var val = w.acc[q];
         if (val === null) { pen = false; return; }
         d += (pen ? "L" : "M") + x(i).toFixed(1) + " " + y(val).toFixed(1);
         pen = true; lastI = i;
       });
       if (d) el("path", { d: d, "class": "ln " + cls });
-      ws.forEach(function (w, i) { if (w[key] !== null) el("circle", { cx: x(i), cy: y(w[key]), r: 4, "class": "dot " + cls }); });
-      if (lastI >= 0) ends.push({ cls: cls, y: y(ws[lastI][key]), x: x(lastI), v: ws[lastI][key] });
-    });
-    if (ends.length === 2 && Math.abs(ends[0].y - ends[1].y) < 14) {
-      var mid = (ends[0].y + ends[1].y) / 2, up = ends[0].y <= ends[1].y ? 0 : 1;
-      ends[up].y = mid - 7; ends[1 - up].y = mid + 7;
-    }
-    ends.forEach(function (e) {
-      var t = el("text", { x: e.x + 9, y: e.y + 4, "class": "lab" });
-      t.textContent = nf1.format(e.v * 100) + " %";
+      ws.forEach(function (w, i) { if (w.acc[q] !== null) el("circle", { cx: x(i), cy: y(w.acc[q]), r: 4, "class": "dot " + cls }); });
+      if (lastI >= 0) ends.push({ y: y(ws[lastI].acc[q]), x: x(lastI), v: ws[lastI].acc[q] });
+    })(q);
+    // separar etiquetas finales que se pisan
+    ends.sort(function (a, b) { return a.y - b.y; });
+    for (var e = 1; e < ends.length; e++) if (ends[e].y - ends[e - 1].y < 14) ends[e].y = ends[e - 1].y + 14;
+    ends.forEach(function (en) {
+      var t = el("text", { x: en.x + 9, y: en.y + 4, "class": "lab" });
+      t.textContent = nf1.format(en.v * 100) + " %";
     });
     var tip = document.createElement("div");
     tip.className = "tip";
@@ -1127,8 +1185,7 @@
       function show() {
         cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
         tip.innerHTML = '<div class="t-h">' + fmtSemLong(w.sem) + "</div>" +
-          '<div class="t-r"><i class="a"></i>' + esc(n.A) + "<b>" + fmtP(w.accA) + "</b></div>" +
-          '<div class="t-r"><i class="b"></i>' + esc(n.B) + "<b>" + fmtP(w.accB) + "</b></div>" +
+          n.map(function (nm, q) { return '<div class="t-r"><i class="' + CLS[q] + '"></i>' + esc(nm) + "<b>" + fmtP(w.acc[q]) + "</b></div>"; }).join("") +
           '<div class="t-m">Real ' + fmtT(w.r) + " t" + (w.comp ? "" : " · sin comparar") + "</div>";
         tip.hidden = false;
         var bw = box.clientWidth, px = x(i) * bw / W, tw = tip.offsetWidth;
@@ -1153,30 +1210,42 @@
     return ks.length === 1 ? "semana " + fmtSemLong(ks[0]) : ks.length + " semanas, " + fmtSem(ks[0]) + " a " + fmtSemLong(ks[ks.length - 1]);
   }
 
+  function svsUniverse() {
+    var sis = seriesMap("sistema"), sug = seriesMap("sugerido");
+    if (!sis && !sug) return null;
+    var out = new Map();
+    [sis, sug].forEach(function (m) {
+      if (!m) return;
+      m.forEach(function (wk, sem) { var t = out.get(sem); if (!t) { t = new Map(); out.set(sem, t); } wk.forEach(function (v, k) { t.set(k, 1); }); });
+    });
+    return out;
+  }
+
   function refresh() {
     var nW = Math.max(1, Math.min(52, parseInt($("nWeeks").value, 10) || 8));
-    var srcA = $("srcA").value, srcB = $("srcB").value;
-    var A = seriesMap(srcA), B = seriesMap(srcB);
-    $("statusCompare").innerHTML = (A || B) ?
-      "<strong>" + esc(names().A) + ":</strong> " + weekRange(A) + ".<br><strong>" + esc(names().B) + ":</strong> " + weekRange(B) + "." :
+    var slots = activeSlots(), K = slots.length, nm = names(K);
+    var series = slots.map(function (id) { return seriesMap($("src" + id).value); });
+    $("statusCompare").innerHTML = series.some(Boolean) ?
+      nm.map(function (x, i) { return "<strong>" + esc(x) + ":</strong> " + weekRange(series[i]) + "."; }).join("<br>") :
       "Sugeridos vs Sistema cubre solo los CD que el equipo CPFR revisa, así que por defecto se comparan esas filas.";
-    if (!state.base || !A || !B) {
-      render(compute({ weeks: demo.weeks.slice(-nW), real: demo.real, A: demo.A, B: demo.B, meta: demo.meta, universe: "fc", filter: null }), true, demo.descr);
+    if (!state.base || !series.every(Boolean)) {
+      var ds = demo.series.slice(0, K);
+      render(compute({ weeks: demo.weeks.slice(-nW), real: demo.real, series: ds, meta: demo.meta, universe: "fc", filter: null }), true, demo.descr);
       return;
     }
-    // semanas: las ultimas N de BASE que tienen algun forecast; si no hay, las ultimas N de BASE
-    var withFc = state.base.weeks.filter(function (w) { return (A.has(w) && A.get(w).size) || (B.has(w) && B.get(w).size); });
+    // semanas: las ultimas N de BASE con algun forecast; si no hay, las ultimas N de BASE
+    var withFc = state.base.weeks.filter(function (w) { return series.some(function (m) { return m.has(w) && m.get(w).size; }); });
     var weeks = (withFc.length ? withFc : state.base.weeks).slice(-nW);
-    render(compute({ weeks: weeks, real: realMap(), A: A, B: B, meta: state.meta, universe: $("universe").value, filter: currentFilter() }), false, state.descr);
+    var uni = $("universe").value, svs = uni === "svs" ? svsUniverse() : null;
+    if (uni === "svs" && !svs) uni = "fc";
+    render(compute({ weeks: weeks, real: realMap(), series: series, svs: svs, meta: state.meta, universe: uni, filter: currentFilter() }), false, state.descr);
   }
 
   function renderFiles() {
     var ul = $("filesList");
     ul.innerHTML = state.files.map(function (f, i) {
-      var parts = [];
-      if (f.sistema) parts.push(f.sistema.map(function (w) { return fmtSem(resolveWeek(w.raw, f.hint)); }).join(", ") + " · " + nf0.format(f.svsRows) + " filas SvS");
-      else parts.push("sin Sugeridos vs Sistema");
-      return '<li><span class="fname" title="' + esc(f.name) + '">' + esc(f.name) + '</span><span class="fmeta">' + parts.join("") +
+      var info = f.sistema ? f.sistema.map(function (w) { return fmtSem(resolveWeek(w.raw, f.hint)); }).join(", ") + " · " + nf0.format(f.svsRows) + " filas SvS" : "sin Sugeridos vs Sistema";
+      return '<li><span class="fname" title="' + esc(f.name) + '">' + esc(f.name) + '</span><span class="fmeta">' + info +
         '</span><button type="button" data-i="' + i + '" aria-label="Quitar ' + esc(f.name) + '">×</button></li>';
     }).join("");
     Array.prototype.forEach.call(ul.querySelectorAll("button"), function (b) {
@@ -1245,7 +1314,8 @@
       fillFilter("fGrupo", "fGrupoWrap", "grupo", r.cols.grupo);
       fillFilter("fCat", "fCatWrap", "cat", r.cols.cat);
       var w = r.base.weeks;
-      st.innerHTML = "BASE: <strong>" + nf0.format(r.base.rows.length) + " filas</strong>, semanas " + fmtSemLong(w[0]) + " a " + fmtSemLong(w[w.length - 1]) + ".";
+      st.innerHTML = "BASE: <strong>" + nf0.format(r.base.rows.length) + " filas</strong>, semanas " + fmtSemLong(w[0]) + " a " + fmtSemLong(w[w.length - 1]) + "." +
+        (r.masterFcst ? " FCST: <strong>" + weekRange(r.masterFcst) + "</strong>." : " No encontré la hoja FCST.");
       $("dropMaster").classList.add("filled");
       renderFiles();
       refresh();
@@ -1259,12 +1329,13 @@
   $("realCol").addEventListener("change", function () { state.realCol = parseInt(this.value, 10); refresh(); });
   wireDrop($("dropFiles"), $("fileFiles"), addFiles);
 
-  var DEFAULT_NAMES = { sistema: "FCST Sistema", sugerido: "Sugerido CPFR", cierre: "Cierre final", master: "FCST maestro" };
-  ["A", "B"].forEach(function (id) {
+  var DEFAULT_NAMES = { sistema: "FCST Sistema", sugerido: "Sugerido CPFR", cierre: "Cierre final", master: "FCST usado", none: "" };
+  IDS.forEach(function (id) {
     $("src" + id).addEventListener("change", function () {
       var nameEl = $("name" + id);
       var isDefault = Object.keys(DEFAULT_NAMES).some(function (k) { return DEFAULT_NAMES[k] === nameEl.value.trim(); });
       if (isDefault || !nameEl.value.trim()) nameEl.value = DEFAULT_NAMES[this.value];
+      nameEl.disabled = this.value === "none";
       refresh();
     });
     $("name" + id).addEventListener("input", refresh);
@@ -1277,7 +1348,6 @@
     clearTimeout(resizeT);
     resizeT = setTimeout(function () { if (state.last) drawChart(state.last.res.weekStats, state.last.names); }, 120);
   });
-  // si cambia el tema, repintar las tablas con los colores del tema nuevo
   try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", refresh); } catch (e) {}
   try { new MutationObserver(refresh).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] }); } catch (e) {}
 
@@ -1292,55 +1362,52 @@
   }
   function showExportMsg(text, cls) { var e = $("msgExport"); e.textContent = text; e.className = "msg " + cls; e.hidden = false; }
 
-  function pivotSheet(pm, title) {
+  function pivotSheet(pm, title, pct) {
     var aoa = [[title], ["Centro de Distribución"].concat(pm.weeks.map(function (w) { return monthOfSem(w) + " " + w; }), ["Total general"])];
     pm.rows.forEach(function (r) { aoa.push([r.cd].concat(r.vals, [r.tot])); });
     aoa.push(["Total general"].concat(pm.totRow, [pm.grand]));
     var ws = XLSX.utils.aoa_to_sheet(aoa);
     for (var R = 2; R < aoa.length; R++) for (var C = 1; C < aoa[R].length; C++) {
       var cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
-      if (cell && typeof cell.v === "number") cell.z = "0%";
+      if (cell && typeof cell.v === "number") cell.z = pct ? "0%" : "+0.0%;-0.0%";
     }
     ws["!cols"] = [{ wch: 24 }].concat(pm.weeks.map(function () { return { wch: 11 }; }), [{ wch: 13 }]);
     return ws;
   }
-
   function sheetName(t, used) {
-    var s = t.replace(/[\\\/?*\[\]:]/g, " ").slice(0, 31);
-    return used.indexOf(s) === -1 ? s : s.slice(0, 29) + " 2";
+    var s = t.replace(/[\\\/?*\[\]:]/g, " ").slice(0, 31), k = 2;
+    while (used.indexOf(s) !== -1) { s = s.slice(0, 29) + " " + k; k++; }
+    used.push(s);
+    return s;
   }
 
   $("btnExport").addEventListener("click", function () {
     var L = state.last;
     if (!L || L.demo) return;
-    var res = L.res, n = L.names, g = res.g;
+    var res = L.res, n = L.names, g = res.g, used = [];
     var wb = XLSX.utils.book_new();
-    var resumen = [
-      ["Métrica", n.A, n.B],
-      ["Exactitud", g.accA, g.accB],
-      ["Sesgo", g.biasA, g.biasB],
-      ["Error absoluto (t)", g.ea, g.eb],
-      ["Forecast total (t)", g.a, g.b],
-      ["Venta real (t)", g.r, g.r],
-      ["Semanas ganadas", res.winsA, res.winsB],
-      ["Semanas comparadas", res.compWeeks, res.compWeeks]
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), "Resumen");
-    var shA = sheetName("Exactitud " + n.A, []), shB = sheetName("Exactitud " + n.B, [shA]);
-    XLSX.utils.book_append_sheet(wb, pivotSheet(pivotMatrix(res, "a"), "Exactitud " + n.A), shA);
-    XLSX.utils.book_append_sheet(wb, pivotSheet(pivotMatrix(res, "b"), "Exactitud " + n.B), shB);
-    XLSX.utils.book_append_sheet(wb, pivotSheet(pivotMatrix(res, "d"), "Diferencia " + n.B + " - " + n.A + " (puntos)"), "Diferencia");
-    // detalle en formato BASE para armar tablas dinamicas propias
-    var det = [["Semana", "Mes", "CD", "SKU", "Descripción", "Tipo Fabricación", "Grupo Marketing", "Categoría", "Real (t)", n.A + " (t)", n.B + " (t)", "Desvío " + n.A + " (t)", "Desvío " + n.B + " (t)"]];
-    res.detail.forEach(function (d) {
-      var a = state.attrs.get(d[2]) || {};
-      det.push([d[0], monthOfSem(d[0]), d[1], d[2], L.descr.get(d[2]) || "", a.tipo || "", a.grupo || "", a.cat || "", d[3], d[4], d[5], Math.abs(d[3] - d[4]), Math.abs(d[3] - d[5])]);
+    var resumen = [["Métrica"].concat(n),
+      ["Exactitud"].concat(g.acc), ["Sesgo"].concat(g.bias), ["Error absoluto (t)"].concat(g.e), ["Forecast total (t)"].concat(g.f),
+      ["Venta real (t)"].concat(n.map(function () { return g.r; })), ["Semanas ganadas"].concat(res.wins),
+      ["Semanas comparadas"].concat(n.map(function () { return res.compWeeks; }))];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), sheetName("Resumen", used));
+    n.forEach(function (nm, i) { XLSX.utils.book_append_sheet(wb, pivotSheet(pivotMatrix(res, i), "Exactitud " + nm, true), sheetName("Exactitud " + nm, used)); });
+    diffPairs(res.K).forEach(function (p) {
+      var t = n[p[1]] + " - " + n[p[0]];
+      XLSX.utils.book_append_sheet(wb, pivotSheet(pivotMatrix(res, p), "Diferencia " + t + " (puntos de exactitud)", false), sheetName("Dif " + t, used));
     });
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(det), "Detalle");
+    var det = [["Semana", "Mes", "CD", "SKU", "Descripción", "Tipo Fabricación", "Grupo Marketing", "Categoría", "Real (t)"]
+      .concat(n.map(function (x) { return x + " (t)"; }), n.map(function (x) { return "Desvío " + x + " (t)"; }))];
+    res.detail.forEach(function (d) {
+      var a = state.attrs.get(d[2]) || {}, f = d.slice(4);
+      det.push([d[0], monthOfSem(d[0]), d[1], d[2], L.descr.get(d[2]) || "", a.tipo || "", a.grupo || "", a.cat || "", d[3]]
+        .concat(f, f.map(function (v) { return Math.abs(d[3] - v); })));
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(det), sheetName("Detalle", used));
 
     var out = XLSX.write(wb, { type: "array", bookType: "xlsx" });
     var blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    var fname = "Exactitud_" + n.A.replace(/[^\w]+/g, "_") + "_vs_" + n.B.replace(/[^\w]+/g, "_") + ".xlsx";
+    var fname = "Exactitud_" + n.map(function (x) { return x.replace(/[^\w]+/g, "_"); }).join("_vs_") + ".xlsx";
     var btn = this;
     btn.disabled = true;
     downloadsPromise.then(function (downloads) {
