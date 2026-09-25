@@ -315,7 +315,7 @@
   .sum-box .sk { font-size: 12px; color: var(--muted); line-height: 1.45; }
   .sum-box .sk b { color: var(--ink); }
   .ctl-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
-  .ctl-row .field { flex: 1 1 180px; max-width: 280px; }
+  .ctl-row .field { flex: 1 1 170px; max-width: 280px; }
   .more { font-size: 12.5px; color: var(--muted); }
   .tbl-wrap { overflow-x: auto; }
   table.pv { border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; min-width: 100%; }
@@ -542,6 +542,14 @@
       <div class="sum-row" id="skuSummary"></div>
       <div class="ctl-row">
         <div class="field">
+          <label for="skuWeek">Semana</label>
+          <select id="skuWeek"><option value="">Todas las semanas comparadas</option></select>
+        </div>
+        <div class="field">
+          <label for="skuMin">Venta real mínima (t)</label>
+          <input type="number" id="skuMin" value="0" min="0" step="0.1" inputmode="decimal">
+        </div>
+        <div class="field">
           <label for="skuWin">Mostrar</label>
           <select id="skuWin"></select>
         </div>
@@ -693,6 +701,7 @@
     recCache: null,
     diffPair: 0,
     skuWin: "all",
+    skuWeek: null,
     lastSkuRows: null
   };
 
@@ -936,7 +945,7 @@
   function mergeAgg(d, o) { d.n += o.n; d.r += o.r; for (var q = 0; q < o.f.length; q++) { d.f[q] += o.f[q]; d.e[q] += o.e[q]; } }
 
   function makeCollector(K, weeks) {
-    var C = { K: K, cells: new Map(), cdTot: new Map(), cols: new Map(), week: new Map(), g: newAgg(K), byKey: new Map(), detail: [] };
+    var C = { K: K, cells: new Map(), cdTot: new Map(), cols: new Map(), week: new Map(), g: newAgg(K), byKey: new Map(), byKeyWeek: new Map(), detail: [] };
     weeks.forEach(function (w) { C.week.set(w, newAgg(K)); });
     C.add = function (w, mes, cd, sku, key, r, f, comp, fixedE) {
       var e = f.map(function (v, q) { return fixedE && fixedE[q] !== null ? fixedE[q] : Math.abs(r - v); });
@@ -952,6 +961,11 @@
       var s = C.byKey.get(key);
       if (!s) { s = newAgg(K); s.cd = cd; s.sku = sku; C.byKey.set(key, s); }
       addAgg(s, r, f, e);
+      var kw = C.byKeyWeek.get(w);
+      if (!kw) { kw = new Map(); C.byKeyWeek.set(w, kw); }
+      var sw = kw.get(key);
+      if (!sw) { sw = newAgg(K); sw.cd = cd; sw.sku = sku; kw.set(key, sw); }
+      addAgg(sw, r, f, e);
       C.detail.push([w, mes, cd, sku, r].concat(f));
     };
     return C;
@@ -978,6 +992,7 @@
       cds: Array.from(C.cdTot.keys()).sort(function (x, y) { return x.localeCompare(y, "es"); }),
       cells: C.cells, cdTot: C.cdTot,
       bySku: Array.from(C.byKey.values()).sort(function (x, y) { return spread(y) - spread(x); }),
+      byKeyWeek: C.byKeyWeek,
       detail: C.detail
     };
   }
@@ -1200,8 +1215,10 @@
   function diffPairs(K) { return K === 3 ? [[0, 1], [0, 2], [1, 2]] : [[0, 1]]; }
 
   // SKU x CD donde los dos forecasts del par elegido son distintos, con la exactitud de cada uno
-  function diffSkuRows(res, ia, ib) {
-    return res.bySku.filter(function (s) { return Math.abs(s.f[ia] - s.f[ib]) > 0.0005; }).map(function (s) {
+  // week: semana (ej. 202638) o null para todas las semanas comparadas; minVol: venta real minima en toneladas
+  function diffSkuRows(res, ia, ib, week, minVol) {
+    var src = week ? Array.from((res.byKeyWeek.get(week) || new Map()).values()) : res.bySku;
+    return src.filter(function (s) { return Math.abs(s.f[ia] - s.f[ib]) > 0.0005 && s.r >= (minVol || 0); }).map(function (s) {
       var aa = res.accOf(s, ia), ab = res.accOf(s, ib);
       var winAcc = aa === null || ab === null || Math.abs(aa - ab) < 1e-9 ? -1 : (ab > aa ? ib : ia);
       var winErr = Math.abs(s.e[ia] - s.e[ib]) < 1e-9 ? -1 : (s.e[ib] < s.e[ia] ? ib : ia);
@@ -1210,9 +1227,18 @@
   }
 
   function renderSkuPanel(res, n, pr, descr) {
-    var ia = pr[0], ib = pr[1], rows = diffSkuRows(res, ia, ib);
+    var ia = pr[0], ib = pr[1];
+    // semanas disponibles
+    var weekSel = $("skuWeek"), compW = res.weekStats.filter(function (w) { return w.comp; }).map(function (w) { return w.sem; });
+    var wPrev = state.skuWeek && compW.indexOf(state.skuWeek) !== -1 ? state.skuWeek : null;
+    weekSel.innerHTML = '<option value="">Todas las semanas comparadas (' + compW.length + ")</option>" +
+      compW.slice().reverse().map(function (w) { return '<option value="' + w + '"' + (w === wPrev ? " selected" : "") + ">" + fmtSemLong(w) + " (" + monthOfSem(w) + ")</option>"; }).join("");
+    state.skuWeek = wPrev;
+    var minVol = Math.max(0, parseFloat(String($("skuMin").value).replace(",", ".")) || 0);
+    var rows = diffSkuRows(res, ia, ib, wPrev, minVol);
     $("skuTitle").textContent = "SKU donde " + n[ib] + " y " + n[ia] + " son distintos";
-    $("skuSub").innerHTML = "Cada fila es un SKU × CD, sumando las semanas comparadas. La exactitud usa la misma fórmula de las tablas de arriba. " +
+    $("skuSub").innerHTML = "Cada fila es un SKU × CD" + (wPrev ? " en la semana <strong>" + fmtSemLong(wPrev) + "</strong>" : ", sumando las semanas comparadas") +
+      (minVol > 0 ? ", con venta real de al menos " + nf1.format(minVol) + " t" : "") + ". La exactitud usa la misma fórmula de las tablas de arriba. " +
       "El par se elige en <strong>Comparar</strong>, en la tabla de diferencia.";
     var cnt = {}, vol = {};
     [ia, ib, -1].forEach(function (k) { cnt[k] = 0; vol[k] = 0; });
@@ -1262,9 +1288,9 @@
       "<th>" + esc(n[ia]) + " (t)</th><th>" + esc(n[ib]) + " (t)</th><th>Exact. " + esc(n[ia]) + "</th><th>Exact. " + esc(n[ib]) + "</th><th>Dif. (pp)</th>" +
       '<th class="txt">Mejor exactitud</th><th class="txt">Menor error</th></tr></thead><tbody>' +
       (body || '<tr><td colspan="11">Sin filas para este filtro.</td></tr>') + "</tbody>";
-    $("skuMore").textContent = list.length > LIMIT ? "Mostrando " + LIMIT + " de " + nf0.format(list.length) + ". El Excel descargable trae todas (hoja \"SKU distintos\")." :
+    $("skuMore").textContent = list.length > LIMIT ? "Mostrando " + LIMIT + " de " + nf0.format(list.length) + ". El Excel descargable trae todas (hoja \"" + (wPrev ? "SKU distintos x semana" : "SKU distintos") + "\")." :
       (list.length ? nf0.format(list.length) + " fila(s)." : "");
-    state.lastSkuRows = { rows: rows, ia: ia, ib: ib };
+    state.lastSkuRows = { rows: rows, ia: ia, ib: ib, week: wPrev, minVol: minVol };
   }
 
   function render(res, isDemo, descr) {
@@ -1616,6 +1642,8 @@
   $("skuWin").addEventListener("change", function () { state.skuWin = this.value; rerenderSku(); });
   $("skuSort").addEventListener("change", rerenderSku);
   $("skuFind").addEventListener("input", rerenderSku);
+  $("skuWeek").addEventListener("change", function () { state.skuWeek = this.value ? parseInt(this.value, 10) : null; rerenderSku(); });
+  $("skuMin").addEventListener("input", rerenderSku);
 
   var resizeT = null;
   window.addEventListener("resize", function () {
@@ -1695,6 +1723,26 @@
       }
       XLSX.utils.book_append_sheet(wb, ws, sheetName("SKU distintos " + n[ib].slice(0, 8) + "-" + n[ia].slice(0, 8), used));
     });
+    // mismo detalle, semana por semana, para el par que esta en pantalla
+    (function () {
+      var pr = diffPairs(res.K)[state.diffPair || 0], ia = pr[0], ib = pr[1];
+      function nm(k) { return k < 0 ? "Empate" : n[k]; }
+      var aoa = [["Semana", "Mes", "SKU", "Descripción", "CD", "Real (t)", n[ia] + " (t)", n[ib] + " (t)", "Error " + n[ia] + " (t)", "Error " + n[ib] + " (t)",
+        "Exactitud " + n[ia], "Exactitud " + n[ib], "Diferencia (" + n[ib] + " − " + n[ia] + ")", "Mejor exactitud", "Menor error"]];
+      res.weekStats.filter(function (w) { return w.comp; }).forEach(function (w) {
+        diffSkuRows(res, ia, ib, w.sem, 0).sort(function (x, y) { return y.s.r - x.s.r; }).forEach(function (r) {
+          var s = r.s;
+          aoa.push([w.sem, monthOfSem(w.sem), s.sku, L.descr.get(s.sku) || "", s.cd, s.r, s.f[ia], s.f[ib], s.e[ia], s.e[ib], r.aa, r.ab,
+            r.aa === null || r.ab === null ? null : r.ab - r.aa, nm(r.winAcc), nm(r.winErr)]);
+        });
+      });
+      var ws = XLSX.utils.aoa_to_sheet(aoa);
+      for (var R = 1; R < aoa.length; R++) for (var C = 10; C <= 12; C++) {
+        var cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+        if (cell && typeof cell.v === "number") cell.z = C === 12 ? "+0.0%;-0.0%" : "0.0%";
+      }
+      XLSX.utils.book_append_sheet(wb, ws, sheetName("SKU distintos x semana", used));
+    })();
 
     var out = XLSX.write(wb, { type: "array", bookType: "xlsx" });
     var blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
