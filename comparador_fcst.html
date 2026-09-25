@@ -317,6 +317,9 @@
   .ctl-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
   .ctl-row .field { flex: 1 1 170px; max-width: 280px; }
   .more { font-size: 12.5px; color: var(--muted); }
+  .zero-box { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 14px; }
+  .zero-txt { font-size: 13px; color: var(--muted); line-height: 1.5; flex: 1 1 320px; }
+  .zero-txt b { color: var(--ink); }
   .tbl-wrap { overflow-x: auto; }
   table.pv { border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; min-width: 100%; }
   table.pv th, table.pv td { padding: 6px 10px; border: 1px solid var(--grid); white-space: nowrap; }
@@ -568,6 +571,14 @@
       </div>
       <div class="tbl-wrap"><table class="plain" id="tblDiff"></table></div>
       <div class="more" id="skuMore"></div>
+      <div class="zero-box">
+        <div class="zero-txt" id="zeroInfo">Cuando cargues tus archivos, acá vas a poder descargar los SKU que quedaron en 0 % de exactitud.</div>
+        <button class="cta" id="btnZero" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>
+          Descargar SKU con 0 % (.xlsx)
+        </button>
+      </div>
+      <div class="msg" id="msgZero" hidden></div>
     </section>
 
     <section class="panel">
@@ -702,6 +713,7 @@
     diffPair: 0,
     skuWin: "all",
     skuWeek: null,
+    lastZero: null,
     lastSkuRows: null
   };
 
@@ -1226,6 +1238,51 @@
     });
   }
 
+  // Por que una exactitud da 0 %. Con la formula del maestro (1 - |R - F| / F) pasa si R = 0, F = 0 o R >= 2F;
+  // con la formula sobre la venta real (1 - |R - F| / R) pasa si F >= 2R o F = 0.
+  function zeroCause(r, f) {
+    if (!(f > 0) && r > 0) return "Sin forecast y hubo venta";
+    if (!(r > 0) && f > 0) return "Forecast sin venta";
+    if (r >= 2 * f) return "Venta de al menos el doble del forecast";
+    if (f >= 2 * r) return "Forecast de al menos el doble de la venta";
+    return "";
+  }
+  // SKU x CD x semana (y del periodo) donde algun forecast quedo en 0 %
+  function zeroRows(res) {
+    function pick(list, week) {
+      var out = [];
+      list.forEach(function (s) {
+        if (!(s.r > 0) && s.f.every(function (v) { return !(v > 0); })) return; // sin venta y sin forecast: no aporta
+        var acc = s.f.map(function (x, q) { return res.accOf(s, q); });
+        var zeros = acc.map(function (a) { return a !== null && a <= 1e-9; });
+        if (zeros.some(Boolean)) out.push({ s: s, acc: acc, zeros: zeros, week: week });
+      });
+      return out;
+    }
+    var weekly = [];
+    res.weekStats.filter(function (w) { return w.comp; }).forEach(function (w) {
+      weekly = weekly.concat(pick(Array.from((res.byKeyWeek.get(w.sem) || new Map()).values()), w.sem));
+    });
+    return { weekly: weekly, period: pick(res.bySku, null) };
+  }
+
+  function renderZeroInfo(res, n) {
+    var z = zeroRows(res);
+    state.lastZero = z;
+    if (!z.weekly.length) {
+      $("zeroInfo").textContent = res.compWeeks ? "Ningún SKU × CD quedó en 0 % en las semanas comparadas." : "Cuando cargues tus archivos, acá vas a poder descargar los SKU que quedaron en 0 % de exactitud.";
+      $("btnZero").disabled = true;
+      return;
+    }
+    var parts = n.map(function (nm, q) {
+      var c = 0, t = 0;
+      z.weekly.forEach(function (r) { if (r.zeros[q]) { c++; t += r.s.r; } });
+      return "<b>" + esc(nm) + "</b>: " + nf0.format(c) + " (" + fmtT(t) + " t de venta)";
+    });
+    $("zeroInfo").innerHTML = "SKU × CD × semana con 0 % de exactitud: " + parts.join(" · ") + ".";
+    $("btnZero").disabled = !!(state.last && state.last.demo);
+  }
+
   function renderSkuPanel(res, n, pr, descr) {
     var ia = pr[0], ib = pr[1];
     // semanas disponibles
@@ -1291,6 +1348,7 @@
     $("skuMore").textContent = list.length > LIMIT ? "Mostrando " + LIMIT + " de " + nf0.format(list.length) + ". El Excel descargable trae todas (hoja \"" + (wPrev ? "SKU distintos x semana" : "SKU distintos") + "\")." :
       (list.length ? nf0.format(list.length) + " fila(s)." : "");
     state.lastSkuRows = { rows: rows, ia: ia, ib: ib, week: wPrev, minVol: minVol };
+    renderZeroInfo(res, n);
   }
 
   function render(res, isDemo, descr) {
@@ -1663,6 +1721,63 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
   }
   function showExportMsg(text, cls) { var e = $("msgExport"); e.textContent = text; e.className = "msg " + cls; e.hidden = false; }
+
+  function saveWorkbook(wb, fname, btn, msgId) {
+    var out = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+    var blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    function msg(t, cls) { var e = $(msgId); e.textContent = t; e.className = "msg " + cls; e.hidden = false; }
+    btn.disabled = true;
+    downloadsPromise.then(function (downloads) {
+      if (!downloads) { downloadBlobNatively(fname, blob); msg("Listo, se descargó " + fname + ".", "ok"); return; }
+      return downloads.save({ filename: fname, data: blob }).then(function () { msg("Listo, se guardó " + fname + ".", "ok"); });
+    }).catch(function (err) {
+      var code = err && err.code ? err.code : "unavailable";
+      msg(code === "declined" ? "Descarga cancelada." : "No se pudo guardar el archivo (" + code + ").", "err");
+    }).then(function () { btn.disabled = false; });
+  }
+
+  $("btnZero").addEventListener("click", function () {
+    var L = state.last;
+    if (!L || L.demo) return;
+    var res = L.res, n = L.names, z = zeroRows(res), used = [];
+    var wb = XLSX.utils.book_new();
+    var formula = res.accOf === accMaestro ? "1 − |Real − FCST| / FCST (igual que la hoja Exactitud)" : "1 − |Real − FCST| / Real";
+
+    // resumen por forecast y causa
+    var causes = ["Forecast sin venta", "Sin forecast y hubo venta", "Venta de al menos el doble del forecast", "Forecast de al menos el doble de la venta"];
+    var resumen = [["SKU con 0 % de exactitud"], ["Fórmula", formula], ["Semanas comparadas", res.weekStats.filter(function (w) { return w.comp; }).map(function (w) { return w.sem; }).join(", ")], [],
+      ["Forecast", "SKU × CD × semana en 0 %", "Venta real (t)", "Forecast (t)"].concat(causes)];
+    n.forEach(function (nm, q) {
+      var c = 0, t = 0, fc = 0, byC = {};
+      z.weekly.forEach(function (r) { if (!r.zeros[q]) return; c++; t += r.s.r; fc += r.s.f[q]; var k = zeroCause(r.s.r, r.s.f[q]); byC[k] = (byC[k] || 0) + 1; });
+      resumen.push([nm, c, t, fc].concat(causes.map(function (k) { return byC[k] || 0; })));
+    });
+    resumen.push([]);
+    resumen.push(["Cómo leerlo: con la fórmula del maestro la exactitud de una fila queda en 0 % si no hubo venta, si no hubo forecast o si la venta fue al menos el doble del forecast."]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), sheetName("Resumen", used));
+
+    function sheet(list, withWeek) {
+      var head = (withWeek ? ["Semana", "Mes"] : []).concat(["SKU", "Descripción", "CD", "Tipo Fabricación", "Grupo Marketing", "Categoría", "Real (t)"],
+        n.map(function (x) { return x + " (t)"; }), n.map(function (x) { return "Exactitud " + x; }), n.map(function (x) { return "Causa 0 % " + x; }), ["En 0 %"]);
+      var aoa = [head];
+      list.sort(function (a, b) { return (withWeek ? a.week - b.week : 0) || b.s.r - a.s.r; }).forEach(function (r) {
+        var s = r.s, a = state.attrs.get(s.sku) || {};
+        aoa.push((withWeek ? [r.week, monthOfSem(r.week)] : []).concat([s.sku, L.descr.get(s.sku) || "", s.cd, a.tipo || "", a.grupo || "", a.cat || "", s.r],
+          s.f, r.acc, s.f.map(function (f, q) { return r.zeros[q] ? zeroCause(s.r, f) : ""; }),
+          [n.filter(function (x, q) { return r.zeros[q]; }).join(" + ")]));
+      });
+      var ws = XLSX.utils.aoa_to_sheet(aoa), c0 = (withWeek ? 2 : 0) + 7 + n.length;
+      for (var R = 1; R < aoa.length; R++) for (var C = c0; C < c0 + n.length; C++) {
+        var cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+        if (cell && typeof cell.v === "number") cell.z = "0.0%";
+      }
+      ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(1, aoa.length - 1), c: head.length - 1 } }) };
+      return ws;
+    }
+    XLSX.utils.book_append_sheet(wb, sheet(z.weekly, true), sheetName("SKU 0% por semana", used));
+    XLSX.utils.book_append_sheet(wb, sheet(z.period, false), sheetName("SKU 0% en el periodo", used));
+    saveWorkbook(wb, "SKU_exactitud_0.xlsx", this, "msgZero");
+  });
 
   function pivotSheet(pm, title, pct) {
     var aoa = [[title], ["Centro de Distribución"].concat(pm.disp.map(function (d) { return d.mes + (d.label ? " " + d.label : ""); }), ["Total general"])];
