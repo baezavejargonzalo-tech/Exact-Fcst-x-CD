@@ -1,0 +1,1207 @@
+<title>Comparador FCST x CD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+  :root {
+    --bg: #eef2f8;
+    --bg-grid: #e2e8f4;
+    --surface: #ffffff;
+    --surface-2: #f6f8fc;
+    --ink: #182339;
+    --muted: #626e88;
+    --border: #d8e0ee;
+    --grid: #e6ebf4;
+    --accent: #2b5fe0;
+    --accent-ink: #ffffff;
+    --accent-soft: #e7edfd;
+    --success: #16875a;
+    --success-soft: #e3f6ed;
+    --error: #c23b3b;
+    --error-soft: #fbe9e9;
+    --warn: #a8710a;
+    --warn-soft: #fbf1e0;
+    --focus: #2b5fe0;
+    --s1: #2a78d6;
+    --s2: #eb6834;
+    --s1-soft: #e6effb;
+    --s2-soft: #fdebe3;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e1420;
+      --bg-grid: #131a29;
+      --surface: #171f30;
+      --surface-2: #1d2638;
+      --ink: #e8ecf7;
+      --muted: #93a0bd;
+      --border: #2a3450;
+      --grid: #232d44;
+      --accent: #5b86f5;
+      --accent-ink: #0e1420;
+      --accent-soft: #202c4c;
+      --success: #4bc793;
+      --success-soft: #163329;
+      --error: #e2685f;
+      --error-soft: #34201f;
+      --warn: #e0af52;
+      --warn-soft: #362a12;
+      --focus: #5b86f5;
+      --s1: #3987e5;
+      --s2: #d95926;
+      --s1-soft: #1b2b45;
+      --s2-soft: #3a2218;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e1420;
+    --bg-grid: #131a29;
+    --surface: #171f30;
+    --surface-2: #1d2638;
+    --ink: #e8ecf7;
+    --muted: #93a0bd;
+    --border: #2a3450;
+    --grid: #232d44;
+    --accent: #5b86f5;
+    --accent-ink: #0e1420;
+    --accent-soft: #202c4c;
+    --success: #4bc793;
+    --success-soft: #163329;
+    --error: #e2685f;
+    --error-soft: #34201f;
+    --warn: #e0af52;
+    --warn-soft: #362a12;
+    --focus: #5b86f5;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s1-soft: #1b2b45;
+    --s2-soft: #3a2218;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--ink);
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding-block: 44px 80px; padding-inline: 20px; }
+  @media (max-width: 480px) { .wrap { padding-inline: 16px; padding-block: 28px 60px; } }
+
+  header.page { margin-bottom: 28px; }
+  .eyebrow {
+    font-family: "Manrope", sans-serif; font-weight: 700; font-size: 12px;
+    letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px;
+  }
+  h1 {
+    font-family: "Manrope", sans-serif; font-weight: 800; font-size: 27px; line-height: 1.15;
+    letter-spacing: -0.01em; margin: 0 0 10px; text-wrap: balance;
+  }
+  h2 {
+    font-family: "Manrope", sans-serif; font-weight: 700; font-size: 17px; margin: 0;
+    text-wrap: balance;
+  }
+  .lede { color: var(--muted); font-size: 15px; line-height: 1.55; margin: 0; max-width: 68ch; }
+
+  .inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(20, 30, 60, 0.04);
+    display: flex; flex-direction: column; gap: 12px; min-width: 0;
+  }
+  .card-head { display: flex; align-items: center; gap: 10px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .swatch.real { background: var(--ink); }
+  .swatch.a { background: var(--s1); }
+  .swatch.b { background: var(--s2); }
+  .card-title { font-family: "Manrope", sans-serif; font-weight: 700; font-size: 16px; }
+  .card-sub { color: var(--muted); font-size: 13px; margin: -4px 0 0; line-height: 1.5; }
+
+  .drop {
+    border: 1.5px dashed var(--border); border-radius: 12px; background: var(--surface-2);
+    padding: 18px 14px; text-align: center; cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .drop:hover, .drop:focus-visible { border-color: var(--accent); outline: none; }
+  .drop.drag { border-color: var(--accent); background: var(--accent-soft); }
+  .drop.filled { border-style: solid; border-color: var(--success); background: var(--success-soft); }
+  .drop-icon { width: 26px; height: 26px; margin: 0 auto 6px; color: var(--muted); display: block; }
+  .drop.filled .drop-icon { color: var(--success); }
+  .drop-main { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+  .drop-hint { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  input[type="file"] { display: none; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .field label, .field .lbl { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .field input[type="text"], .field input[type="number"], .field select {
+    width: 100%; font-family: inherit; font-size: 14px; font-variant-numeric: tabular-nums;
+    padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  }
+  .field input:focus-visible, .field select:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .seg { display: flex; border: 1px solid var(--border); border-radius: 9px; padding: 3px; gap: 3px; background: var(--surface-2); }
+  .seg label {
+    flex: 1; text-align: center; font-size: 12.5px; font-weight: 600; padding: 6px 8px; border-radius: 6px;
+    cursor: pointer; color: var(--muted);
+  }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg input:checked + span { color: var(--ink); }
+  .seg label:has(input:checked) { background: var(--surface); box-shadow: 0 1px 2px rgba(20, 30, 60, 0.12); color: var(--ink); }
+  .seg label:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .files li {
+    display: flex; align-items: center; gap: 8px; font-size: 12.5px; background: var(--surface-2);
+    border-radius: 8px; padding: 6px 8px;
+  }
+  .files .fname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  .files .fmeta { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .files button {
+    border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1;
+    padding: 2px 4px; border-radius: 4px;
+  }
+  .files button:hover { color: var(--error); }
+  .files button:focus-visible { outline: 2px solid var(--focus); }
+
+  .status { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .status strong { color: var(--ink); font-weight: 600; }
+  .status.err { color: var(--error); background: var(--error-soft); border-radius: 8px; padding: 8px 10px; }
+
+  .settings {
+    margin-top: 16px; display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
+  }
+  .settings .field { width: 190px; flex: 1 1 160px; max-width: 260px; }
+  .settings .field.grow { flex: 2 1 220px; max-width: none; }
+
+  /* ================= resultados ================= */
+  .results { margin-top: 32px; display: flex; flex-direction: column; gap: 20px; }
+  .results-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pill {
+    font-family: "Manrope", sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 999px; background: var(--warn-soft); color: var(--warn);
+  }
+  .pill.live { background: var(--success-soft); color: var(--success); }
+  .results-head .spacer { flex: 1; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px;
+    display: flex; flex-direction: column; gap: 14px; min-width: 0;
+  }
+  .panel-sub { color: var(--muted); font-size: 13px; margin: -8px 0 0; line-height: 1.5; }
+
+  .verdict {
+    font-family: "Manrope", sans-serif; font-weight: 800; font-size: 22px; line-height: 1.25; margin: 0;
+    text-wrap: balance; letter-spacing: -0.01em;
+  }
+  .verdict-sub { color: var(--muted); font-size: 14px; line-height: 1.55; margin: -6px 0 0; max-width: 72ch; }
+
+  .score { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .score { grid-template-columns: 1fr; } }
+  .side { border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border); background: var(--surface-2); }
+  .side.win.a { border-color: var(--s1); background: var(--s1-soft); }
+  .side.win.b { border-color: var(--s2); background: var(--s2-soft); }
+  .side-head { display: flex; align-items: center; gap: 8px; }
+  .side-name { font-weight: 700; font-size: 14px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .crown {
+    font-family: "Manrope", sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+  }
+  .big { font-family: "Manrope", sans-serif; font-weight: 800; font-size: 38px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .big-l { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+  .kv div { min-width: 0; }
+  .kv .v { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .kv .k { color: var(--muted); font-size: 11.5px; margin-top: 1px; }
+
+  .note {
+    font-size: 12.5px; color: var(--muted); line-height: 1.5; background: var(--surface-2);
+    border-radius: 8px; padding: 8px 10px;
+  }
+  .note strong { color: var(--ink); }
+  .note.warn { background: var(--warn-soft); color: var(--warn); }
+  .note.warn strong { color: var(--warn); }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .legend i.a { background: var(--s1); }
+  .legend i.b { background: var(--s2); }
+
+  .chart { position: relative; width: 100%; }
+  .chart svg { display: block; width: 100%; height: 280px; overflow: visible; }
+  .chart .gl { stroke: var(--grid); stroke-width: 1; }
+  .chart .axis-t { fill: var(--muted); font-size: 11px; font-family: "Inter", sans-serif; font-variant-numeric: tabular-nums; }
+  .chart .lab { fill: var(--ink); font-size: 11.5px; font-weight: 700; font-family: "Inter", sans-serif; font-variant-numeric: tabular-nums; }
+  .chart .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .ln.a { stroke: var(--s1); }
+  .chart .ln.b { stroke: var(--s2); }
+  .chart .dot { stroke: var(--surface); stroke-width: 2; }
+  .chart .dot.a { fill: var(--s1); }
+  .chart .dot.b { fill: var(--s2); }
+  .chart .cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+  .chart .hit { fill: transparent; cursor: crosshair; }
+  .chart .nodata { fill: var(--surface-2); }
+  .tip {
+    position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 9px 11px; font-size: 12px; box-shadow: 0 6px 20px rgba(10, 20, 50, 0.14);
+    min-width: 170px; z-index: 2;
+  }
+  .tip .t-h { font-weight: 700; margin-bottom: 5px; }
+  .tip .t-r { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+  .tip .t-r b { margin-left: auto; font-weight: 700; }
+  .tip .t-r i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .tip .t-r i.a { background: var(--s1); }
+  .tip .t-r i.b { background: var(--s2); }
+  .tip .t-m { color: var(--muted); margin-top: 4px; }
+
+  .tbl-wrap { overflow-x: auto; margin-inline: -4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th {
+    text-align: right; font-weight: 600; font-size: 11.5px; color: var(--muted); padding: 8px 10px;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  td.txt, th.txt { text-align: left; }
+  td.desc { text-align: left; white-space: normal; min-width: 180px; max-width: 320px; color: var(--muted); font-size: 12px; }
+  tr.off td { color: var(--muted); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; padding: 2px 8px;
+    border-radius: 999px; background: var(--surface-2); color: var(--muted);
+  }
+  .chip i { width: 7px; height: 7px; border-radius: 2px; display: inline-block; }
+  .chip.a { background: var(--s1-soft); color: var(--ink); }
+  .chip.a i { background: var(--s1); }
+  .chip.b { background: var(--s2-soft); color: var(--ink); }
+  .chip.b i { background: var(--s2); }
+
+  .two { display: flex; flex-direction: column; gap: 20px; }
+
+  button.cta {
+    border: none; border-radius: 10px; background: var(--accent); color: var(--accent-ink);
+    font-family: "Manrope", sans-serif; font-weight: 700; font-size: 14px; padding: 10px 16px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: filter 0.15s ease, transform 0.05s ease;
+  }
+  button.cta:hover { filter: brightness(1.06); }
+  button.cta:active { transform: translateY(1px); }
+  button.cta:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
+  button.cta:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .msg { font-size: 12.5px; color: var(--muted); }
+  .msg.err { color: var(--error); }
+  .msg.ok { color: var(--success); }
+
+  footer.page { margin-top: 36px; text-align: center; color: var(--muted); font-size: 12px; line-height: 1.6; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="page">
+    <p class="eyebrow">Exactitud · FCST x CD</p>
+    <h1>¿Qué forecast le pegó mejor al sell in?</h1>
+    <p class="lede">Subí el archivo maestro (la venta real sale de la hoja BASE) y los dos forecasts que querés comparar. La página cruza cada CD × SKU × semana contra lo realmente entregado y te dice cuál fue más exacto en las últimas semanas.</p>
+  </header>
+
+  <div class="inputs">
+    <section class="card" id="cardReal">
+      <div class="card-head"><span class="swatch real"></span><span class="card-title">Real · archivo maestro</span></div>
+      <p class="card-sub">El Excel con las hojas BASE y FCST. De BASE se toma la venta real por semana, SKU y CD.</p>
+      <div class="drop" id="dropMaster" tabindex="0" role="button" aria-label="Subir archivo maestro">
+        <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+        <div class="drop-main" id="dropMasterMain">Arrastrá el archivo maestro o hacé clic</div>
+        <div class="drop-hint">.xlsx · hojas BASE + FCST</div>
+      </div>
+      <input type="file" id="fileMaster" accept=".xlsx,.xlsm,.xls">
+      <div class="field">
+        <label for="realCol">Columna de venta real (toneladas)</label>
+        <select id="realCol" disabled><option>Columna I (se lee al subir el maestro)</option></select>
+      </div>
+      <div class="status" id="statusMaster">Todavía no subiste el maestro.</div>
+    </section>
+
+    <section class="card" id="cardA">
+      <div class="card-head"><span class="swatch a"></span><span class="card-title" id="titleA">Forecast A</span></div>
+      <div class="field">
+        <label for="nameA">Nombre</label>
+        <input type="text" id="nameA" value="FCST Cierre x CD" maxlength="40">
+      </div>
+      <div class="field">
+        <span class="lbl" id="srcALbl">De dónde sale</span>
+        <div class="seg" role="radiogroup" aria-labelledby="srcALbl">
+          <label><input type="radio" name="srcA" id="srcAMaster" value="master" checked><span>Hoja FCST del maestro</span></label>
+          <label><input type="radio" name="srcA" id="srcAFiles" value="files"><span>Subir archivos</span></label>
+        </div>
+      </div>
+      <div class="drop" id="dropA" tabindex="0" role="button" aria-label="Subir archivos del forecast A" hidden>
+        <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+        <div class="drop-main">Arrastrá uno o varios archivos</div>
+        <div class="drop-hint">Cierre x CD (SEM NN) o tabla CD · SKU · Semana · Ton</div>
+      </div>
+      <input type="file" id="fileA" accept=".xlsx,.xlsm,.xls,.csv" multiple>
+      <ul class="files" id="filesA"></ul>
+      <div class="field" id="modeAField" hidden>
+        <label for="modeA">De cada Cierre x CD (formato ancho) tomar</label>
+        <select id="modeA">
+          <option value="first" selected>Solo la primera semana</option>
+          <option value="all">Todas las semanas del archivo</option>
+        </select>
+      </div>
+      <div class="status" id="statusA">Usa las filas de la hoja FCST del maestro.</div>
+    </section>
+
+    <section class="card" id="cardB">
+      <div class="card-head"><span class="swatch b"></span><span class="card-title" id="titleB">Forecast B</span></div>
+      <div class="field">
+        <label for="nameB">Nombre</label>
+        <input type="text" id="nameB" value="Forecast alternativo" maxlength="40">
+      </div>
+      <div class="field">
+        <span class="lbl" id="srcBLbl">De dónde sale</span>
+        <div class="seg" role="radiogroup" aria-labelledby="srcBLbl">
+          <label><input type="radio" name="srcB" id="srcBMaster" value="master"><span>Hoja FCST del maestro</span></label>
+          <label><input type="radio" name="srcB" id="srcBFiles" value="files" checked><span>Subir archivos</span></label>
+        </div>
+      </div>
+      <div class="drop" id="dropB" tabindex="0" role="button" aria-label="Subir archivos del forecast B">
+        <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+        <div class="drop-main">Arrastrá uno o varios archivos</div>
+        <div class="drop-hint">Cierre x CD (SEM NN) o tabla CD · SKU · Semana · Ton</div>
+      </div>
+      <input type="file" id="fileB" accept=".xlsx,.xlsm,.xls,.csv" multiple>
+      <ul class="files" id="filesB"></ul>
+      <div class="field" id="modeBField">
+        <label for="modeB">De cada Cierre x CD (formato ancho) tomar</label>
+        <select id="modeB">
+          <option value="first" selected>Solo la primera semana</option>
+          <option value="all">Todas las semanas del archivo</option>
+        </select>
+      </div>
+      <div class="status" id="statusB">Subí un archivo por semana (o uno con todas las semanas).</div>
+    </section>
+  </div>
+
+  <div class="settings">
+    <div class="field">
+      <label for="nWeeks">Semanas a comparar</label>
+      <input type="number" id="nWeeks" value="8" min="1" max="52">
+    </div>
+    <div class="field grow">
+      <label for="level">Nivel al que se mide el error</label>
+      <select id="level">
+        <option value="cdsku" selected>CD × SKU (el más exigente)</option>
+        <option value="sku">SKU total país (se compensan los CD)</option>
+        <option value="cd">CD total (se compensan los SKU)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="results-head">
+      <h2>Resultado</h2>
+      <span class="pill" id="modePill">Datos de ejemplo</span>
+      <span class="spacer"></span>
+      <button class="cta" id="btnExport" disabled>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>
+        Descargar detalle (.xlsx)
+      </button>
+    </div>
+    <div class="msg" id="msgExport" hidden></div>
+
+    <section class="panel">
+      <p class="verdict" id="verdict">–</p>
+      <p class="verdict-sub" id="verdictSub"></p>
+      <div class="score" id="score"></div>
+      <div class="note" id="notes" hidden></div>
+    </section>
+
+    <section class="panel">
+      <h2>Exactitud semana a semana</h2>
+      <p class="panel-sub">Exactitud = 1 − Σ|real − forecast| / Σ real, medida al nivel elegido arriba.</p>
+      <div class="legend" id="legend"></div>
+      <div class="chart" id="chart"></div>
+      <div class="tbl-wrap"><table id="tblWeeks"></table></div>
+    </section>
+
+    <div class="two">
+      <section class="panel">
+        <h2>Por CD</h2>
+        <p class="panel-sub">Medido a nivel CD × SKU, solo en semanas con los dos forecasts.</p>
+        <div class="tbl-wrap"><table id="tblCd"></table></div>
+      </section>
+      <section class="panel">
+        <h2>SKU donde más se separan</h2>
+        <p class="panel-sub">Suma del error absoluto de todas las semanas comparadas, en toneladas.</p>
+        <div class="tbl-wrap"><table id="tblSku"></table></div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="page">Los cálculos corren en tu navegador y ningún archivo se envía a un servidor. El maestro solo se lee, no se modifica.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ================= utilidades =================
+  var CD_REPLACEMENTS = [
+    ["PLANTA OSORNO", "CD SAN BERNARDO"],
+    ["PLANTA", "CD"],
+    ["TEMUCO", "CHILLAN"]
+  ];
+  function normalizeCD(v) {
+    if (typeof v !== "string") return v;
+    var out = v;
+    for (var i = 0; i < CD_REPLACEMENTS.length; i++) out = out.split(CD_REPLACEMENTS[i][0]).join(CD_REPLACEMENTS[i][1]);
+    return out;
+  }
+  function cdKey(v) {
+    if (v === null || v === undefined) return "";
+    return String(normalizeCD(String(v).toUpperCase())).trim().replace(/\s+/g, " ");
+  }
+  function skuKey(v) {
+    if (v === null || v === undefined) return "";
+    var s = String(v).trim();
+    if (/^\d+(\.0+)?$/.test(s)) s = s.replace(/\.0+$/, "").replace(/^0+(?=\d)/, "");
+    return s;
+  }
+  function toNum(v) {
+    if (typeof v === "number") return isFinite(v) ? v : 0;
+    if (v === null || v === undefined) return 0;
+    var s = String(v).replace(/\s/g, "");
+    if (s.indexOf(",") !== -1 && s.indexOf(".") !== -1) s = s.replace(/\./g, "").replace(",", ".");
+    else if (s.indexOf(",") !== -1) s = s.replace(",", ".");
+    var n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+  var SEP = "\u0001";
+  function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function $(id) { return document.getElementById(id); }
+  var nf0 = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
+  var nf1 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  function fmtT(n) { return Math.abs(n) >= 100 ? nf0.format(n) : nf1.format(n); }
+  function fmtP(x) { return x === null || x === undefined ? "–" : nf1.format(x * 100) + " %"; }
+  function fmtPP(x) { return (x > 0 ? "+" : x < 0 ? "−" : "") + nf1.format(Math.abs(x * 100)) + " pp"; }
+  function fmtSem(s) { return "S" + String(s % 100).padStart(2, "0"); }
+  function fmtSemLong(s) { return "S" + String(s % 100).padStart(2, "0") + " · " + Math.floor(s / 100); }
+  function acc(r, e) { return r > 0 ? Math.max(0, 1 - e / r) : null; }
+
+  // semana tipo 202638, "2026-38", "S38 2026" o solo 38
+  function parseSemRaw(v) {
+    if (v === null || v === undefined || v === "") return null;
+    if (typeof v === "number") return v > 0 ? Math.round(v) : null;
+    var s = String(v);
+    var m = /(20\d{2})\D{0,3}(\d{1,2})(?!\d)/.exec(s);
+    if (m) return parseInt(m[1], 10) * 100 + parseInt(m[2], 10);
+    m = /(\d{1,2})\D+(20\d{2})/.exec(s);
+    if (m) return parseInt(m[2], 10) * 100 + parseInt(m[1], 10);
+    m = /(\d+)/.exec(s);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  function readArrayBuffer(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function (e) { resolve(e.target.result); };
+      reader.onerror = function () { reject(reader.error); };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+  function sheetRows(ws) { return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null }); }
+  function findSheet(wb, name) {
+    var t = name.toUpperCase();
+    for (var i = 0; i < wb.SheetNames.length; i++) if (wb.SheetNames[i].trim().toUpperCase() === t) return wb.SheetNames[i];
+    return null;
+  }
+  function findCol(headers, re, fallback) {
+    for (var i = 0; i < headers.length; i++) if (typeof headers[i] === "string" && re.test(headers[i].trim())) return i;
+    return fallback;
+  }
+
+  // ================= estado =================
+  var state = {
+    base: null,        // { headers, rows, weeks:[sem asc], cdCol, skuCol, semCol }
+    realCol: 8,
+    realCache: null,   // { col, map: Map sem -> Map key -> ton }
+    masterFcst: null,  // Map sem -> Map key -> ton
+    meta: new Map(),   // key -> {cd, sku}
+    descr: new Map(),  // sku -> descripcion
+    slots: {
+      A: { source: "master", mode: "first", files: [] },
+      B: { source: "files", mode: "first", files: [] }
+    },
+    last: null         // ultimo resultado calculado (para exportar)
+  };
+
+  function keyOf(cd, sku) {
+    var k = cd + SEP + sku;
+    if (!state.meta.has(k)) state.meta.set(k, { cd: cd, sku: sku });
+    return k;
+  }
+  function addDescr(sku, d) {
+    if (sku && d !== null && d !== undefined && String(d).trim() && !state.descr.has(sku)) state.descr.set(sku, String(d).trim());
+  }
+  function addTo(map, sem, key, val) {
+    var w = map.get(sem);
+    if (!w) { w = new Map(); map.set(sem, w); }
+    w.set(key, (w.get(key) || 0) + val);
+  }
+
+  function resolveWeek(raw) {
+    if (raw === null) return null;
+    if (raw >= 100000) return raw;
+    var wk = raw;
+    var weeks = state.base ? state.base.weeks : [];
+    for (var i = weeks.length - 1; i >= 0; i--) if (weeks[i] % 100 === wk) return weeks[i];
+    var yr = weeks.length ? Math.floor(weeks[weeks.length - 1] / 100) : new Date().getFullYear();
+    return yr * 100 + wk;
+  }
+
+  // ================= maestro =================
+  function parseMaster(buf) {
+    var wb = XLSX.read(new Uint8Array(buf), { type: "array", dense: true, cellDates: false });
+    var baseName = findSheet(wb, "BASE");
+    if (!baseName) throw new Error("no encontré la hoja BASE. ¿Es el archivo maestro?");
+    var rows = sheetRows(wb.Sheets[baseName]);
+    if (rows.length < 2) throw new Error("la hoja BASE está vacía.");
+    var headers = rows[0].map(function (h) { return h === null ? "" : String(h); });
+    var data = rows.slice(1);
+    var semCol = 2, skuCol = 6, cdCol = 18; // C, G, S (las mismas que usa la formula de T en BASE)
+    var descCol = findCol(headers, /desc/i, -1);
+    var weekSet = new Set();
+    data.forEach(function (r) {
+      var sem = parseSemRaw(r[semCol]);
+      if (sem && sem >= 100000) weekSet.add(sem);
+      if (descCol >= 0) addDescr(skuKey(r[skuCol]), r[descCol]);
+    });
+    var weeks = Array.from(weekSet).sort(function (a, b) { return a - b; });
+    if (!weeks.length) throw new Error("la columna C de BASE no tiene semanas tipo 202638.");
+
+    var masterFcst = null;
+    var fcstName = findSheet(wb, "FCST");
+    if (fcstName) {
+      masterFcst = new Map();
+      sheetRows(wb.Sheets[fcstName]).slice(1).forEach(function (r) {
+        var sem = parseSemRaw(r[5]);
+        var sku = skuKey(r[2]);
+        if (!sem || !sku) return;
+        addDescr(sku, r[3]);
+        addTo(masterFcst, sem, keyOf(cdKey(r[0]), sku), toNum(r[6]));
+      });
+    }
+    return { base: { headers: headers, rows: data, weeks: weeks, semCol: semCol, skuCol: skuCol, cdCol: cdCol }, masterFcst: masterFcst };
+  }
+
+  function realMap() {
+    if (state.realCache && state.realCache.col === state.realCol) return state.realCache.map;
+    var b = state.base, col = state.realCol, map = new Map();
+    b.rows.forEach(function (r) {
+      var sem = parseSemRaw(r[b.semCol]);
+      var sku = skuKey(r[b.skuCol]);
+      if (!sem || !sku) return;
+      if (typeof r[0] === "string" && r[0].trim().toUpperCase() === "TOTAL") return;
+      addTo(map, sem, keyOf(cdKey(r[b.cdCol]), sku), toNum(r[col]));
+    });
+    state.realCache = { col: col, map: map };
+    return map;
+  }
+
+  // ================= archivos de forecast =================
+  // Devuelve { kind, weeks:[{raw, data: Map key->ton}], rows }
+  function parseForecastWorkbook(wb) {
+    var fcstName = findSheet(wb, "FCST");
+    if (fcstName) {
+      var fr = sheetRows(wb.Sheets[fcstName]);
+      var byWeek = new Map(), n = 0;
+      fr.slice(1).forEach(function (r) {
+        var raw = parseSemRaw(r[5]), sku = skuKey(r[2]);
+        if (!raw || !sku) return;
+        addDescr(sku, r[3]);
+        addTo(byWeek, raw, keyOf(cdKey(r[0]), sku), toNum(r[6]));
+        n++;
+      });
+      if (n > 0) return { kind: "fcst", weeks: mapToWeeks(byWeek), rows: n };
+    }
+
+    var name = findSheet(wb, "FCST x CD") || wb.SheetNames[0];
+    var rows = sheetRows(wb.Sheets[name]);
+    for (var h = 0; h < Math.min(rows.length, 12); h++) {
+      var headers = (rows[h] || []).map(function (x) { return x === null ? "" : String(x); });
+
+      // formato ancho: columnas "SEM 38 (KG)"
+      var weekCols = [];
+      headers.forEach(function (hd, idx) {
+        var m = hd.trim().match(/^sem(?:ana)?\.?\s*([0-9]+)/i);
+        if (m) weekCols.push({ col: idx, raw: parseInt(m[1], 10), factor: /ton/i.test(hd) ? 1 : 0.001 });
+      });
+      if (weekCols.length) {
+        var firstWeekCol = weekCols[0].col;
+        var cdC = findCol(headers.slice(0, firstWeekCol), /^(cd|centro|planta|bodega)/i, 0);
+        var skuC = findCol(headers.slice(0, firstWeekCol), /(sap|sku|material|c[oó]d)/i, 1);
+        var desC = findCol(headers.slice(0, firstWeekCol), /desc/i, 2);
+        var wide = weekCols.map(function (w) { return { raw: w.raw, data: new Map() }; });
+        var cnt = 0;
+        rows.slice(h + 1).forEach(function (r) {
+          var sku = skuKey(r[skuC]);
+          if (!sku) return;
+          if (typeof r[cdC] === "string" && r[cdC].trim().toUpperCase() === "TOTAL") return;
+          addDescr(sku, r[desC]);
+          var k = keyOf(cdKey(r[cdC]), sku);
+          weekCols.forEach(function (w, i) { wide[i].data.set(k, (wide[i].data.get(k) || 0) + toNum(r[w.col]) * w.factor); });
+          cnt++;
+        });
+        if (cnt) return { kind: "wide", weeks: wide, rows: cnt };
+      }
+
+      // formato largo: CD | SKU | Semana | Ton
+      var semC = findCol(headers, /sem/i, -1);
+      var skuL = findCol(headers, /(sap|sku|material|c[oó]d)/i, -1);
+      var cdL = findCol(headers, /^(cd|centro|planta|bodega)/i, -1);
+      var qC = findCol(headers, /ton/i, -1), factor = 1;
+      if (qC < 0) { qC = findCol(headers, /(kg|kilo)/i, -1); factor = 0.001; }
+      if (qC < 0) { qC = findCol(headers, /(fcst|forecast|pron|cantidad|volumen|qty)/i, -1); factor = 1; }
+      if (semC >= 0 && skuL >= 0 && cdL >= 0 && qC >= 0) {
+        var desL = findCol(headers, /desc/i, -1);
+        var bw = new Map(), c2 = 0;
+        rows.slice(h + 1).forEach(function (r) {
+          var raw = parseSemRaw(r[semC]), sku = skuKey(r[skuL]);
+          if (!raw || !sku) return;
+          if (desL >= 0) addDescr(sku, r[desL]);
+          addTo(bw, raw, keyOf(cdKey(r[cdL]), sku), toNum(r[qC]) * factor);
+          c2++;
+        });
+        if (c2) return { kind: "long", weeks: mapToWeeks(bw), rows: c2 };
+      }
+    }
+    throw new Error("no reconocí el formato. Necesito columnas \"SEM NN (KG)\" o una tabla con CD, SKU, Semana y Ton/Kg.");
+  }
+  function mapToWeeks(m) {
+    return Array.from(m.keys()).sort(function (a, b) { return a - b; }).map(function (raw) { return { raw: raw, data: m.get(raw) }; });
+  }
+
+  function slotMap(id) {
+    var slot = state.slots[id];
+    if (slot.source === "master") return state.masterFcst;
+    if (!slot.files.length) return null;
+    var out = new Map();
+    slot.files.forEach(function (f) {
+      var weeks = (f.kind === "wide" && slot.mode === "first") ? f.weeks.slice(0, 1) : f.weeks;
+      weeks.forEach(function (w) { out.set(resolveWeek(w.raw), w.data); }); // el archivo cargado despues pisa esa semana
+    });
+    return out;
+  }
+
+  // ================= calculo =================
+  function compute(inp) {
+    var level = inp.level;
+    var gl = { r: 0, a: 0, b: 0, ea: 0, eb: 0, covA: 0, covB: 0 };
+    var byCd = new Map(), byKey = new Map(), detail = [], weekStats = [];
+
+    inp.weeks.forEach(function (w) {
+      var R = inp.real.get(w) || new Map();
+      var A = inp.A ? inp.A.get(w) : null, B = inp.B ? inp.B.get(w) : null;
+      var hasA = !!A && A.size > 0, hasB = !!B && B.size > 0, comp = hasA && hasB;
+      var keys = new Set(R.keys());
+      if (A) A.forEach(function (v, k) { keys.add(k); });
+      if (B) B.forEach(function (v, k) { keys.add(k); });
+      var ws = { sem: w, hasA: hasA, hasB: hasB, comp: comp, r: 0, a: 0, b: 0, ea: 0, eb: 0 };
+      var lv = new Map();
+      keys.forEach(function (k) {
+        var r = R.get(k) || 0, a = A ? (A.get(k) || 0) : 0, b = B ? (B.get(k) || 0) : 0;
+        if (!r && !a && !b) return;
+        var m = inp.meta.get(k);
+        ws.r += r; ws.a += a; ws.b += b;
+        var lk = level === "sku" ? m.sku : level === "cd" ? m.cd : k;
+        var o = lv.get(lk);
+        if (!o) { o = { r: 0, a: 0, b: 0 }; lv.set(lk, o); }
+        o.r += r; o.a += a; o.b += b;
+        if (comp) {
+          detail.push([w, m.cd, m.sku, r, a, b]);
+          var c = byCd.get(m.cd);
+          if (!c) { c = { cd: m.cd, r: 0, a: 0, b: 0, ea: 0, eb: 0 }; byCd.set(m.cd, c); }
+          c.r += r; c.a += a; c.b += b; c.ea += Math.abs(r - a); c.eb += Math.abs(r - b);
+          var s = byKey.get(k);
+          if (!s) { s = { cd: m.cd, sku: m.sku, r: 0, a: 0, b: 0, ea: 0, eb: 0 }; byKey.set(k, s); }
+          s.r += r; s.a += a; s.b += b; s.ea += Math.abs(r - a); s.eb += Math.abs(r - b);
+        }
+      });
+      lv.forEach(function (o) {
+        ws.ea += Math.abs(o.r - o.a); ws.eb += Math.abs(o.r - o.b);
+        if (comp && o.r > 0) { if (o.a > 0) gl.covA += o.r; if (o.b > 0) gl.covB += o.r; }
+      });
+      ws.accA = hasA ? acc(ws.r, ws.ea) : null;
+      ws.accB = hasB ? acc(ws.r, ws.eb) : null;
+      if (comp) { gl.r += ws.r; gl.a += ws.a; gl.b += ws.b; gl.ea += ws.ea; gl.eb += ws.eb; }
+      weekStats.push(ws);
+    });
+
+    var comps = weekStats.filter(function (w) { return w.comp; });
+    var winsA = 0, winsB = 0;
+    comps.forEach(function (w) { if (w.accA > w.accB) winsA++; else if (w.accB > w.accA) winsB++; });
+    return {
+      weekStats: weekStats, compWeeks: comps.length, winsA: winsA, winsB: winsB,
+      g: {
+        r: gl.r, a: gl.a, b: gl.b, ea: gl.ea, eb: gl.eb,
+        accA: acc(gl.r, gl.ea), accB: acc(gl.r, gl.eb),
+        biasA: gl.r > 0 ? (gl.a - gl.r) / gl.r : null, biasB: gl.r > 0 ? (gl.b - gl.r) / gl.r : null,
+        covA: gl.r > 0 ? gl.covA / gl.r : null, covB: gl.r > 0 ? gl.covB / gl.r : null
+      },
+      byCd: Array.from(byCd.values()).sort(function (x, y) { return y.r - x.r; }),
+      bySku: Array.from(byKey.values()).sort(function (x, y) { return Math.abs(y.ea - y.eb) - Math.abs(x.ea - x.eb); }),
+      detail: detail
+    };
+  }
+
+  // ================= datos de ejemplo =================
+  function buildDemo() {
+    var seed = 20260925;
+    function rnd() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+    var cds = ["CD SAN BERNARDO", "CD CHILLAN", "CD ANTOFAGASTA", "CD PUERTO MONTT"];
+    var skus = [];
+    for (var i = 0; i < 24; i++) skus.push(String(410100 + i * 7));
+    var weeks = [202631, 202632, 202633, 202634, 202635, 202636, 202637, 202638];
+    var meta = new Map(), real = new Map(), A = new Map(), B = new Map(), descr = new Map();
+    skus.forEach(function (s, i) { descr.set(s, "Producto de ejemplo " + (i + 1)); });
+    weeks.forEach(function (w, wi) {
+      cds.forEach(function (cd, ci) {
+        skus.forEach(function (s, si) {
+          var k = cd + SEP + s;
+          meta.set(k, { cd: cd, sku: s });
+          var baseVol = (8 + (si % 6) * 6) * (1 - ci * 0.18);
+          var r = Math.max(0, baseVol * (0.75 + rnd() * 0.5));
+          addTo(real, w, k, r);
+          addTo(A, w, k, Math.max(0, r * (1 + (rnd() - 0.45) * 0.62)));
+          addTo(B, w, k, Math.max(0, r * (1 + (rnd() - 0.5) * (wi === 2 ? 0.7 : 0.42))));
+        });
+      });
+    });
+    return { weeks: weeks, real: real, A: A, B: B, meta: meta, descr: descr };
+  }
+
+  // ================= render =================
+  function names() {
+    return { A: $("nameA").value.trim() || "Forecast A", B: $("nameB").value.trim() || "Forecast B" };
+  }
+
+  function chip(which, n) {
+    if (which === "a") return '<span class="chip a"><i></i>' + esc(n.A) + "</span>";
+    if (which === "b") return '<span class="chip b"><i></i>' + esc(n.B) + "</span>";
+    return '<span class="chip">Empate</span>';
+  }
+
+  function render(res, isDemo, descr) {
+    var n = names();
+    state.last = { res: res, names: n, demo: isDemo, descr: descr };
+    $("titleA").textContent = n.A;
+    $("titleB").textContent = n.B;
+    $("modePill").textContent = isDemo ? "Datos de ejemplo" : "Tus datos";
+    $("modePill").classList.toggle("live", !isDemo);
+    $("btnExport").disabled = isDemo || !res.compWeeks;
+
+    var g = res.g, ws = res.weekStats;
+    var winner = null;
+    if (res.compWeeks && g.accA !== null && g.accB !== null) winner = g.accA > g.accB ? "a" : g.accB > g.accA ? "b" : "tie";
+
+    // veredicto
+    var first = ws.length ? ws[0].sem : null, lastW = ws.length ? ws[ws.length - 1].sem : null;
+    var rango = first ? fmtSem(first) + " a " + fmtSem(lastW) + " de " + Math.floor(lastW / 100) : "";
+    if (!res.compWeeks) {
+      $("verdict").textContent = "Todavía no hay semanas con los dos forecasts cargados.";
+      $("verdictSub").textContent = "Revisá que los dos forecasts tengan datos para alguna de las semanas " + rango + ".";
+    } else if (winner === "tie") {
+      $("verdict").textContent = "Empate: los dos forecasts tuvieron la misma exactitud.";
+      $("verdictSub").textContent = res.compWeeks + " semanas comparadas (" + rango + ").";
+    } else {
+      var wName = winner === "a" ? n.A : n.B, lName = winner === "a" ? n.B : n.A;
+      var wAcc = winner === "a" ? g.accA : g.accB, lAcc = winner === "a" ? g.accB : g.accA;
+      var wWins = winner === "a" ? res.winsA : res.winsB;
+      $("verdict").textContent = wName + " fue más exacto: " + fmtP(wAcc) + " contra " + fmtP(lAcc) + ".";
+      $("verdictSub").textContent = "Son " + fmtPP(wAcc - lAcc).replace("+", "") + " de ventaja sobre " + lName +
+        " en " + res.compWeeks + " semanas (" + rango + "). Ganó " + wWins + " de " + res.compWeeks + " semanas.";
+    }
+
+    function side(which) {
+      var isA = which === "a";
+      var name = isA ? n.A : n.B;
+      var a = isA ? g.accA : g.accB, bias = isA ? g.biasA : g.biasB, err = isA ? g.ea : g.eb, cov = isA ? g.covA : g.covB;
+      var wins = isA ? res.winsA : res.winsB;
+      var biasTxt = bias === null ? "–" : (bias > 0 ? "+" : bias < 0 ? "−" : "") + nf1.format(Math.abs(bias * 100)) + " %";
+      var biasHint = bias === null ? "" : bias > 0.005 ? "sobrestima" : bias < -0.005 ? "subestima" : "sin sesgo";
+      return '<div class="side ' + which + (winner === which ? " win" : "") + '">' +
+        '<div class="side-head"><span class="swatch ' + which + '"></span><span class="side-name">' + esc(name) + "</span>" +
+        (winner === which ? '<span class="crown">Más exacto</span>' : "") + "</div>" +
+        '<div><div class="big">' + fmtP(a) + '</div><div class="big-l">Exactitud del período</div></div>' +
+        '<div class="kv">' +
+        '<div><div class="v">' + biasTxt + '</div><div class="k">Sesgo (' + biasHint + ")</div></div>" +
+        '<div><div class="v">' + (res.compWeeks ? wins + " de " + res.compWeeks : "–") + '</div><div class="k">Semanas ganadas</div></div>' +
+        '<div><div class="v">' + (res.compWeeks ? fmtT(err) + " t" : "–") + '</div><div class="k">Error absoluto total</div></div>' +
+        '<div><div class="v">' + fmtP(cov) + '</div><div class="k">Venta real con forecast</div></div>' +
+        "</div></div>";
+    }
+    $("score").innerHTML = side("a") + side("b");
+
+    // notas
+    var notes = [];
+    if (isDemo) notes.push("Estos números son <strong>de ejemplo</strong>. Subí el maestro y los archivos del segundo forecast para ver los reales.");
+    var missing = ws.filter(function (w) { return !w.comp; });
+    if (missing.length && !isDemo) {
+      notes.push("Quedaron fuera del total " + missing.length + " semana(s) porque les falta un forecast: " +
+        missing.map(function (w) { return "<strong>" + fmtSem(w.sem) + "</strong> (" + (!w.hasA && !w.hasB ? "faltan los dos" : !w.hasA ? "falta " + esc(n.A) : "falta " + esc(n.B)) + ")"; }).join(", ") + ".");
+    }
+    if (res.compWeeks && g.covA !== null && g.covB !== null && Math.abs(g.covA - g.covB) > 0.05) {
+      notes.push("Ojo con la cobertura: uno de los forecasts no incluye SKU que sí se vendieron (" + esc(n.A) + " cubre " + fmtP(g.covA) + " del volumen, " + esc(n.B) + " " + fmtP(g.covB) + "). Esos SKU cuentan como error completo.");
+    }
+    $("notes").innerHTML = notes.join("<br>");
+    $("notes").hidden = !notes.length;
+    $("notes").classList.toggle("warn", !isDemo && notes.length > 0);
+
+    // leyenda + grafico
+    $("legend").innerHTML = '<span><i class="a"></i>' + esc(n.A) + '</span><span><i class="b"></i>' + esc(n.B) + "</span>";
+    drawChart(ws, n);
+
+    // tabla semanal
+    var th = "<thead><tr><th>Semana</th><th>Real (t)</th><th>" + esc(n.A) + " (t)</th><th>" + esc(n.B) + " (t)</th><th>Exact. " + esc(n.A) + "</th><th>Exact. " + esc(n.B) + "</th><th class=\"txt\">Mejor</th></tr></thead>";
+    var tb = ws.map(function (w) {
+      var best = !w.comp ? '<span class="chip">Sin comparar</span>' : chip(w.accA > w.accB ? "a" : w.accB > w.accA ? "b" : "t", n);
+      return '<tr class="' + (w.comp ? "" : "off") + '"><td>' + fmtSemLong(w.sem) + "</td><td>" + fmtT(w.r) + "</td><td>" +
+        (w.hasA ? fmtT(w.a) : "–") + "</td><td>" + (w.hasB ? fmtT(w.b) : "–") + "</td><td>" + fmtP(w.accA) + "</td><td>" + fmtP(w.accB) +
+        '</td><td class="txt">' + best + "</td></tr>";
+    }).join("");
+    $("tblWeeks").innerHTML = th + "<tbody>" + tb + "</tbody>";
+
+    // por CD
+    var cdRows = res.byCd.map(function (c) {
+      var aa = acc(c.r, c.ea), ab = acc(c.r, c.eb);
+      var d = (aa === null || ab === null) ? null : ab - aa;
+      return "<tr><td>" + esc(c.cd || "(sin CD)") + "</td><td>" + fmtT(c.r) + "</td><td>" + fmtP(aa) + "</td><td>" + fmtP(ab) + '</td><td class="txt">' +
+        (d === null ? "–" : chip(d < 0 ? "a" : d > 0 ? "b" : "t", n)) + "</td></tr>";
+    }).join("");
+    $("tblCd").innerHTML = "<thead><tr><th>CD</th><th>Real (t)</th><th>" + esc(n.A) + "</th><th>" + esc(n.B) + '</th><th class="txt">Mejor</th></tr></thead><tbody>' +
+      (cdRows || '<tr><td colspan="5">Sin semanas comparables.</td></tr>') + "</tbody>";
+
+    // SKU
+    var skuRows = res.bySku.slice(0, 15).map(function (s) {
+      return "<tr><td>" + esc(s.sku) + '</td><td class="desc">' + esc(descr.get(s.sku) || "") + '</td><td class="txt">' + esc(s.cd) + "</td><td>" + fmtT(s.r) +
+        "</td><td>" + fmtT(s.ea) + "</td><td>" + fmtT(s.eb) + '</td><td class="txt">' + chip(s.ea < s.eb ? "a" : s.eb < s.ea ? "b" : "t", n) + "</td></tr>";
+    }).join("");
+    $("tblSku").innerHTML = '<thead><tr><th>SKU</th><th class="txt">Descripción</th><th class="txt">CD</th><th>Real</th><th>Error ' + esc(n.A) + "</th><th>Error " + esc(n.B) + '</th><th class="txt">Mejor</th></tr></thead><tbody>' +
+      (skuRows || '<tr><td colspan="7">Sin semanas comparables.</td></tr>') + "</tbody>";
+  }
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function drawChart(ws, n) {
+    var box = $("chart");
+    box.innerHTML = "";
+    var W = Math.max(300, box.clientWidth || 700), H = 280;
+    var m = { t: 16, r: 58, b: 30, l: 44 };
+    var iw = W - m.l - m.r, ih = H - m.t - m.b;
+    var vals = [];
+    ws.forEach(function (w) { if (w.accA !== null) vals.push(w.accA); if (w.accB !== null) vals.push(w.accB); });
+    var svg = document.createElementNS(SVGNS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", "Exactitud semanal de " + n.A + " y " + n.B);
+    function el(tag, attrs, parent) {
+      var e = document.createElementNS(SVGNS, tag);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      (parent || svg).appendChild(e);
+      return e;
+    }
+    var lo = 0, hi = 100;
+    if (vals.length) {
+      var mn = Math.min.apply(null, vals) * 100, mx = Math.max.apply(null, vals) * 100;
+      lo = Math.max(0, Math.floor((mn - 4) / 10) * 10);
+      hi = Math.min(100, Math.ceil((mx + 4) / 10) * 10);
+      if (hi - lo < 20) { if (hi <= 80) hi = lo + 20; else lo = hi - 20; }
+    }
+    var step = (hi - lo) > 50 ? 20 : 10;
+    var N = ws.length;
+    function x(i) { return m.l + (N <= 1 ? iw / 2 : i * iw / (N - 1)); }
+    function y(v) { return m.t + ih * (1 - (v * 100 - lo) / (hi - lo)); }
+
+    // semanas sin comparar: banda suave
+    var colW = N <= 1 ? iw : iw / (N - 1);
+    ws.forEach(function (w, i) {
+      if (!w.comp) el("rect", { x: Math.max(m.l, x(i) - colW / 2), y: m.t, width: Math.min(colW, iw), height: ih, "class": "nodata" });
+    });
+    for (var v = lo; v <= hi + 0.001; v += step) {
+      var yy = m.t + ih * (1 - (v - lo) / (hi - lo));
+      el("line", { x1: m.l, x2: m.l + iw, y1: yy, y2: yy, "class": "gl" });
+      var t = el("text", { x: m.l - 8, y: yy + 4, "text-anchor": "end", "class": "axis-t" });
+      t.textContent = v + " %";
+    }
+    ws.forEach(function (w, i) {
+      var t = el("text", { x: x(i), y: H - 8, "text-anchor": "middle", "class": "axis-t" });
+      t.textContent = fmtSem(w.sem);
+    });
+
+    var cross = el("line", { x1: 0, x2: 0, y1: m.t, y2: m.t + ih, "class": "cross", visibility: "hidden" });
+
+    var ends = [];
+    [["a", "accA"], ["b", "accB"]].forEach(function (sp) {
+      var cls = sp[0], key = sp[1], d = "", pen = false, lastI = -1;
+      ws.forEach(function (w, i) {
+        var val = w[key];
+        if (val === null) { pen = false; return; }
+        d += (pen ? "L" : "M") + x(i).toFixed(1) + " " + y(val).toFixed(1);
+        pen = true; lastI = i;
+      });
+      if (d) el("path", { d: d, "class": "ln " + cls });
+      ws.forEach(function (w, i) { if (w[key] !== null) el("circle", { cx: x(i), cy: y(w[key]), r: 4, "class": "dot " + cls }); });
+      if (lastI >= 0) ends.push({ cls: cls, y: y(ws[lastI][key]), x: x(lastI), v: ws[lastI][key] });
+    });
+    if (ends.length === 2 && Math.abs(ends[0].y - ends[1].y) < 14) {
+      var mid = (ends[0].y + ends[1].y) / 2, up = ends[0].y <= ends[1].y ? 0 : 1;
+      ends[up].y = mid - 7; ends[1 - up].y = mid + 7;
+    }
+    ends.forEach(function (e) {
+      var t = el("text", { x: e.x + 9, y: e.y + 4, "class": "lab" });
+      t.textContent = nf1.format(e.v * 100) + " %";
+    });
+
+    var tip = document.createElement("div");
+    tip.className = "tip";
+    tip.hidden = true;
+    box.appendChild(svg);
+    box.appendChild(tip);
+
+    ws.forEach(function (w, i) {
+      var hx = N <= 1 ? m.l : Math.max(m.l - colW / 2, x(i) - colW / 2);
+      var r = el("rect", { x: hx, y: m.t, width: colW, height: ih + m.b, "class": "hit" });
+      function show() {
+        cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+        tip.innerHTML = '<div class="t-h">' + fmtSemLong(w.sem) + "</div>" +
+          '<div class="t-r"><i class="a"></i>' + esc(n.A) + "<b>" + fmtP(w.accA) + "</b></div>" +
+          '<div class="t-r"><i class="b"></i>' + esc(n.B) + "<b>" + fmtP(w.accB) + "</b></div>" +
+          '<div class="t-m">Real ' + fmtT(w.r) + " t" + (w.comp ? "" : " · sin comparar") + "</div>";
+        tip.hidden = false;
+        var bw = box.clientWidth, px = x(i) * bw / W;
+        var tw = tip.offsetWidth;
+        var left = px + 14;
+        if (left + tw > bw) left = px - tw - 14;
+        tip.style.left = Math.max(0, left) + "px";
+        tip.style.top = "8px";
+      }
+      r.addEventListener("mouseenter", show);
+      r.addEventListener("touchstart", show, { passive: true });
+      r.addEventListener("mouseleave", function () { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+    });
+  }
+
+  // ================= orquestacion =================
+  var demo = buildDemo();
+
+  function refresh() {
+    var level = $("level").value;
+    var nW = Math.max(1, Math.min(52, parseInt($("nWeeks").value, 10) || 8));
+    updateSlotStatus("A");
+    updateSlotStatus("B");
+    var A = state.base ? slotMap("A") : null, B = state.base ? slotMap("B") : null;
+    if (!state.base || !A || !B) {
+      var dw = demo.weeks.slice(-nW);
+      render(compute({ weeks: dw, real: demo.real, A: demo.A, B: demo.B, meta: demo.meta, level: level }), true, demo.descr);
+      return;
+    }
+    var weeks = state.base.weeks.slice(-nW);
+    render(compute({ weeks: weeks, real: realMap(), A: A, B: B, meta: state.meta, level: level }), false, state.descr);
+  }
+
+  function weekRange(map) {
+    var ks = Array.from(map.keys()).filter(function (k) { var m = map.get(k); return m && m.size; }).sort(function (a, b) { return a - b; });
+    if (!ks.length) return "sin semanas";
+    return ks.length === 1 ? "semana " + fmtSem(ks[0]) : ks.length + " semanas, " + fmtSem(ks[0]) + " a " + fmtSem(ks[ks.length - 1]);
+  }
+
+  function updateSlotStatus(id) {
+    var slot = state.slots[id], st = $("status" + id);
+    st.classList.remove("err");
+    if (slot.source === "master") {
+      st.innerHTML = state.masterFcst ? "Hoja FCST del maestro: <strong>" + weekRange(state.masterFcst) + "</strong>." :
+        state.base ? "El maestro no tiene hoja FCST." : "Usa las filas de la hoja FCST del maestro.";
+      return;
+    }
+    if (!slot.files.length) { st.textContent = "Subí un archivo por semana (o uno con todas las semanas)."; return; }
+    var m = slotMap(id);
+    st.innerHTML = "<strong>" + weekRange(m) + "</strong>" + (state.base ? "" : " · falta el maestro para cruzar con la venta real") + ".";
+  }
+
+  function renderFiles(id) {
+    var slot = state.slots[id], ul = $("files" + id);
+    ul.innerHTML = slot.files.map(function (f, i) {
+      var wk = f.weeks.length === 1 ? fmtSem(resolveWeek(f.weeks[0].raw)) : f.weeks.length + " sem.";
+      var kind = f.kind === "wide" ? "Cierre x CD" : f.kind === "fcst" ? "hoja FCST" : "tabla";
+      return '<li><span class="fname" title="' + esc(f.name) + '">' + esc(f.name) + '</span><span class="fmeta">' + kind + " · " + wk +
+        '</span><button type="button" data-i="' + i + '" aria-label="Quitar ' + esc(f.name) + '">×</button></li>';
+    }).join("");
+    Array.prototype.forEach.call(ul.querySelectorAll("button"), function (b) {
+      b.addEventListener("click", function () { slot.files.splice(parseInt(b.getAttribute("data-i"), 10), 1); renderFiles(id); refresh(); });
+    });
+    $("drop" + id).classList.toggle("filled", slot.files.length > 0);
+  }
+
+  function addForecastFiles(id, fileList) {
+    var files = Array.prototype.slice.call(fileList);
+    var st = $("status" + id);
+    st.classList.remove("err");
+    st.textContent = "Leyendo " + files.length + " archivo(s)…";
+    var errors = [];
+    files.reduce(function (p, file) {
+      return p.then(function () {
+        return readArrayBuffer(file).then(function (buf) {
+          var wb = XLSX.read(new Uint8Array(buf), { type: "array", dense: true });
+          var parsed = parseForecastWorkbook(wb);
+          parsed.name = file.name;
+          state.slots[id].files.push(parsed);
+        }).catch(function (e) { errors.push(file.name + ": " + e.message); });
+      });
+    }, Promise.resolve()).then(function () {
+      renderFiles(id);
+      refresh();
+      if (errors.length) { st.classList.add("err"); st.textContent = "No pude leer " + errors.join(" · "); }
+    });
+  }
+
+  function wireDrop(dropEl, inputEl, onFiles) {
+    dropEl.addEventListener("click", function () { inputEl.click(); });
+    dropEl.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputEl.click(); } });
+    inputEl.addEventListener("change", function () { if (inputEl.files.length) onFiles(inputEl.files); inputEl.value = ""; });
+    ["dragover", "dragenter"].forEach(function (evt) { dropEl.addEventListener(evt, function (e) { e.preventDefault(); dropEl.classList.add("drag"); }); });
+    ["dragleave", "drop"].forEach(function (evt) { dropEl.addEventListener(evt, function (e) { e.preventDefault(); dropEl.classList.remove("drag"); }); });
+    dropEl.addEventListener("drop", function (e) { if (e.dataTransfer.files.length) onFiles(e.dataTransfer.files); });
+  }
+
+  // maestro
+  wireDrop($("dropMaster"), $("fileMaster"), function (files) {
+    var file = files[0];
+    var st = $("statusMaster");
+    st.classList.remove("err");
+    st.textContent = "Leyendo " + file.name + "… (un maestro grande puede tardar unos segundos)";
+    $("dropMasterMain").textContent = file.name;
+    readArrayBuffer(file).then(function (buf) {
+      // dejar que el navegador pinte el mensaje antes de bloquear con el parseo
+      return new Promise(function (res) { setTimeout(function () { res(parseMaster(buf)); }, 30); });
+    }).then(function (r) {
+      state.base = r.base;
+      state.masterFcst = r.masterFcst;
+      state.realCache = null;
+      var sel = $("realCol");
+      sel.innerHTML = r.base.headers.map(function (h, i) {
+        return '<option value="' + i + '"' + (i === 8 ? " selected" : "") + ">Columna " + XLSX.utils.encode_col(i) + (h ? " · " + esc(h) : "") + "</option>";
+      }).join("");
+      sel.disabled = false;
+      state.realCol = 8;
+      var w = r.base.weeks;
+      st.innerHTML = "BASE: <strong>" + nf0.format(r.base.rows.length) + " filas</strong>, semanas " + fmtSemLong(w[0]) + " a " + fmtSemLong(w[w.length - 1]) + ".";
+      $("dropMaster").classList.add("filled");
+      renderFiles("A"); renderFiles("B");
+      refresh();
+    }).catch(function (e) {
+      st.classList.add("err");
+      st.textContent = "No pude leer el maestro: " + e.message;
+      $("dropMaster").classList.remove("filled");
+      $("dropMasterMain").textContent = "Arrastrá el archivo maestro o hacé clic";
+    });
+  });
+  $("realCol").addEventListener("change", function () { state.realCol = parseInt(this.value, 10); refresh(); });
+
+  // forecasts
+  ["A", "B"].forEach(function (id) {
+    wireDrop($("drop" + id), $("file" + id), function (files) { addForecastFiles(id, files); });
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="src' + id + '"]'), function (r) {
+      r.addEventListener("change", function () {
+        state.slots[id].source = r.value;
+        var files = r.value === "files";
+        $("drop" + id).hidden = !files;
+        $("files" + id).hidden = !files;
+        $("mode" + id + "Field").hidden = !files;
+        refresh();
+      });
+    });
+    $("mode" + id).addEventListener("change", function () { state.slots[id].mode = this.value; refresh(); });
+    $("name" + id).addEventListener("input", refresh);
+  });
+  $("nWeeks").addEventListener("change", refresh);
+  $("level").addEventListener("change", refresh);
+
+  var resizeT = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(function () { if (state.last) drawChart(state.last.res.weekStats, state.last.names); }, 120);
+  });
+
+  // ================= exportar =================
+  var downloadsPromise = (window.claude && window.claude.use) ? window.claude.use("downloads") : Promise.resolve(null);
+  function downloadBlobNatively(filename, blob) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+  }
+  function showExportMsg(text, cls) { var e = $("msgExport"); e.textContent = text; e.className = "msg " + cls; e.hidden = false; }
+
+  $("btnExport").addEventListener("click", function () {
+    var L = state.last;
+    if (!L || L.demo) return;
+    var res = L.res, n = L.names, g = res.g;
+    var wb = XLSX.utils.book_new();
+    var resumen = [
+      ["Métrica", n.A, n.B],
+      ["Exactitud", g.accA, g.accB],
+      ["Sesgo", g.biasA, g.biasB],
+      ["Error absoluto (t)", g.ea, g.eb],
+      ["Forecast total (t)", g.a, g.b],
+      ["Venta real (t)", g.r, g.r],
+      ["Venta real con forecast", g.covA, g.covB],
+      ["Semanas ganadas", res.winsA, res.winsB],
+      ["Semanas comparadas", res.compWeeks, res.compWeeks],
+      ["Nivel", $("level").options[$("level").selectedIndex].text, ""]
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), "Resumen");
+    var sem = [["Semana", "Real (t)", n.A + " (t)", n.B + " (t)", "Exactitud " + n.A, "Exactitud " + n.B, "Comparada"]];
+    res.weekStats.forEach(function (w) { sem.push([w.sem, w.r, w.hasA ? w.a : null, w.hasB ? w.b : null, w.accA, w.accB, w.comp ? "Sí" : "No"]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sem), "Semanal");
+    var cd = [["CD", "Real (t)", n.A + " (t)", n.B + " (t)", "Error " + n.A, "Error " + n.B, "Exactitud " + n.A, "Exactitud " + n.B]];
+    res.byCd.forEach(function (c) { cd.push([c.cd, c.r, c.a, c.b, c.ea, c.eb, acc(c.r, c.ea), acc(c.r, c.eb)]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cd), "Por CD");
+    var sk = [["SKU", "Descripción", "CD", "Real (t)", n.A + " (t)", n.B + " (t)", "Error " + n.A, "Error " + n.B]];
+    res.bySku.forEach(function (s) { sk.push([s.sku, L.descr.get(s.sku) || "", s.cd, s.r, s.a, s.b, s.ea, s.eb]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sk), "Por SKU");
+    var det = [["Semana", "CD", "SKU", "Real (t)", n.A + " (t)", n.B + " (t)", "|Error| " + n.A, "|Error| " + n.B]];
+    res.detail.forEach(function (d) { det.push([d[0], d[1], d[2], d[3], d[4], d[5], Math.abs(d[3] - d[4]), Math.abs(d[3] - d[5])]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(det), "Detalle");
+
+    var out = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+    var blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    var fname = "Comparacion_forecasts.xlsx";
+    var btn = this;
+    btn.disabled = true;
+    downloadsPromise.then(function (downloads) {
+      if (!downloads) { downloadBlobNatively(fname, blob); showExportMsg("Listo, se descargó " + fname + ".", "ok"); return; }
+      return downloads.save({ filename: fname, data: blob }).then(function () { showExportMsg("Listo, se guardó " + fname + ".", "ok"); });
+    }).catch(function (err) {
+      var code = err && err.code ? err.code : "unavailable";
+      showExportMsg(code === "declined" ? "Descarga cancelada." : "No se pudo guardar el archivo (" + code + ").", "err");
+    }).then(function () { btn.disabled = false; });
+  });
+
+  refresh();
+})();
+</script>
