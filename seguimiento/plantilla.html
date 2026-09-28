@@ -1,0 +1,283 @@
+<title>Avance Semanal FCST</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: una columna de lectura: KPIs arriba, barras por cadena, tabla con detalle SKU desplegable, evolución diaria. Misma línea visual que Cierre Semanal FCST y Comparador FCST x CD. */
+  :root {
+    --bg: #eef2f8; --bg-grid: #e2e8f4; --surface: #ffffff; --surface-2: #f6f8fc;
+    --ink: #182339; --muted: #5d6983; --border: #d8e0ee; --grid: #e6ebf4;
+    --accent: #2b5fe0; --accent-soft: #e7edfd; --accent-2: #9db6f2;
+    --good: #16875a; --good-soft: #e3f6ed; --warn: #9a6608; --warn-soft: #fbf1e0;
+    --crit: #c23b3b; --crit-soft: #fbe9e9; --focus: #2b5fe0;
+    --f-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+    --f-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e1420; --bg-grid: #131a29; --surface: #171f30; --surface-2: #1d2638;
+      --ink: #e8ecf7; --muted: #97a3bf; --border: #2a3450; --grid: #232d44;
+      --accent: #5b86f5; --accent-soft: #202c4c; --accent-2: #34508f;
+      --good: #4bc793; --good-soft: #163329; --warn: #e0af52; --warn-soft: #362a12;
+      --crit: #e2685f; --crit-soft: #34201f; --focus: #5b86f5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e1420; --bg-grid: #131a29; --surface: #171f30; --surface-2: #1d2638;
+    --ink: #e8ecf7; --muted: #97a3bf; --border: #2a3450; --grid: #232d44;
+    --accent: #5b86f5; --accent-soft: #202c4c; --accent-2: #34508f;
+    --good: #4bc793; --good-soft: #163329; --warn: #e0af52; --warn-soft: #362a12;
+    --crit: #e2685f; --crit-soft: #34201f; --focus: #5b86f5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px;
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; display: flex; flex-direction: column; gap: 20px; }
+  @media (max-width: 480px) { .wrap { padding-inline: 16px; padding-block: 24px 56px; } }
+  .eyebrow { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+  h1 { font-family: var(--f-display); font-weight: 800; font-size: 28px; line-height: 1.15; margin: 0 0 8px; text-wrap: balance; }
+  h2 { font-family: var(--f-display); font-weight: 700; font-size: 17px; margin: 0; text-wrap: balance; }
+  .lede { color: var(--muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 72ch; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .sub { color: var(--muted); font-size: 13px; line-height: 1.5; margin: -6px 0 0; max-width: 80ch; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+  .kpi .v { font-family: var(--f-display); font-weight: 800; font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .kpi .k { color: var(--muted); font-size: 12.5px; }
+  .kpi .x { font-size: 12.5px; font-weight: 600; }
+  .meter { height: 6px; border-radius: 3px; background: var(--grid); overflow: hidden; margin-top: 6px; }
+  .meter i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+
+  .bars { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: grid; grid-template-columns: minmax(96px, 190px) minmax(0, 1fr) 64px; gap: 12px; align-items: center; }
+  .bar-name { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { position: relative; height: 22px; cursor: default; }
+  .bar-track .fcst { position: absolute; left: 0; top: 7px; height: 8px; background: var(--grid); border-radius: 0 4px 4px 0; }
+  .bar-track .sol { position: absolute; left: 0; top: 3px; height: 16px; background: var(--accent); border-radius: 0 4px 4px 0; }
+  .bar-track .tick { position: absolute; top: -2px; width: 2px; height: 26px; background: var(--ink); border-radius: 1px; }
+  .bar-pct { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+  .sw.sol { background: var(--accent); } .sw.fc { background: var(--grid); border: 1px solid var(--border); }
+  .sw.tk { width: 2px; height: 14px; background: var(--ink); }
+  @media (max-width: 520px) { .bar-row { grid-template-columns: 88px minmax(0, 1fr) 48px; gap: 8px; } }
+
+  .tip { position: fixed; pointer-events: none; z-index: 5; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; font-size: 12px; box-shadow: 0 6px 20px rgba(10,20,50,.16); min-width: 190px; }
+  .tip .h { font-weight: 700; margin-bottom: 5px; }
+  .tip .r { display: flex; gap: 12px; justify-content: space-between; font-variant-numeric: tabular-nums; }
+  .tip .r b { font-weight: 700; }
+
+  .tbl-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th { text-align: right; font-weight: 600; font-size: 11.5px; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { text-align: right; padding: 9px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th.l, td.l { text-align: left; }
+  tr.cad { cursor: pointer; }
+  tr.cad:hover td { background: var(--surface-2); }
+  tr.cad:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+  tr.cad td:first-child { font-weight: 700; }
+  .car { display: inline-block; width: 12px; color: var(--muted); transition: transform .15s; }
+  tr.cad[aria-expanded="true"] .car { transform: rotate(90deg); }
+  tr.tot td { font-weight: 800; border-top: 2px solid var(--ink); border-bottom: none; }
+  tr.det > td { padding: 0 0 12px 22px; background: var(--surface-2); }
+  table.sku { font-size: 12.5px; }
+  table.sku td, table.sku th { padding: 6px 10px; }
+  table.sku td.prod { text-align: left; white-space: normal; min-width: 220px; max-width: 360px; }
+  .pos { color: var(--warn); } .neg { color: var(--muted); }
+
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+  .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .chip.ok { background: var(--accent-soft); color: var(--accent); }
+  .chip.sobre { background: var(--warn-soft); color: var(--warn); }
+  .chip.crit { background: var(--crit-soft); color: var(--crit); }
+  .chip.cero { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; }
+  .note { background: var(--surface-2); border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.55; }
+  .note b { display: block; font-family: var(--f-display); font-size: 13.5px; margin-bottom: 3px; }
+  .note.warn { background: var(--warn-soft); } .note.crit { background: var(--crit-soft); }
+
+  .hist svg { display: block; width: 100%; height: 220px; overflow: visible; }
+  .hist .gl { stroke: var(--grid); } .hist .ax { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+  .hist .ln { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .hist .dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+  .hist .lab { fill: var(--ink); font-size: 11.5px; font-weight: 700; font-family: var(--f-body); }
+  .empty { color: var(--muted); font-size: 13px; background: var(--surface-2); border-radius: 10px; padding: 14px; }
+  footer { color: var(--muted); font-size: 12px; line-height: 1.6; text-align: center; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Lácteos y Jugos · Seguimiento semanal</p>
+    <h1 id="titulo">Avance vs FCST</h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Resumen de la semana"></section>
+
+  <section class="panel" aria-labelledby="hBars">
+    <h2 id="hBars">Solicitado vs FCST por cadena</h2>
+    <p class="sub">Largo de la barra = toneladas solicitadas en la semana. La línea marca el FCST. Pasa el cursor por una barra para ver el detalle.</p>
+    <div class="legend"><span><i class="sw sol"></i>Solicitado</span><span><i class="sw fc"></i>FCST</span><span><i class="sw tk"></i>Meta FCST</span></div>
+    <div class="bars" id="bars"></div>
+  </section>
+
+  <section class="notes" id="alertas" aria-label="Lo que hay que mirar"></section>
+
+  <section class="panel" aria-labelledby="hTbl">
+    <h2 id="hTbl">Detalle por cadena</h2>
+    <p class="sub">Toca una cadena para ver sus SKU, ordenados por la mayor diferencia entre solicitado y FCST.</p>
+    <div class="tbl-wrap"><table id="tbl"></table></div>
+  </section>
+
+  <section class="panel hist" aria-labelledby="hHist">
+    <h2 id="hHist">Evolución día a día</h2>
+    <p class="sub">Avance total de la semana (solicitado / FCST) en cada corte que cargas.</p>
+    <div id="hist"></div>
+  </section>
+
+  <footer id="pie"></footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+  var D = /*__DATOS__*/null;
+  var nf1 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var nf0 = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
+  function t(n) { return Math.abs(n) >= 100 ? nf0.format(n) : nf1.format(n); }
+  function p(x) { return x === null || x === undefined || !isFinite(x) ? "–" : nf0.format(Math.round(x * 100)) + " %"; }
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function nombre(c) { if (c.length <= 4) return c; return c.toLowerCase().replace(/(^|\s)\S/g, function (m) { return m.toUpperCase(); }).replace(/\bY\b/g, "y"); }
+  var $ = function (id) { return document.getElementById(id); };
+  var DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+  function fechaLarga(iso) { var d = new Date(iso + "T12:00:00"); return DIAS[d.getDay()] + " " + iso.slice(8, 10) + "-" + iso.slice(5, 7) + "-" + iso.slice(0, 4); }
+
+  var C = D.cadenas;
+  var tot = C.reduce(function (a, c) { a.f += c.FCST; a.s += c.Solicitado; a.r += c["Venta Real"]; a.q += c.Quebrados; return a; }, { f: 0, s: 0, r: 0, q: 0 });
+
+  function estado(c) {
+    if (c.Solicitado <= 0) return { k: "cero", l: "Sin pedidos" };
+    if (c["Quiebre %"] >= 0.15) return { k: "crit", l: "Quiebre " + p(c["Quiebre %"]) };
+    if (c["Avance %"] >= 1) return { k: "sobre", l: "Sobre FCST" };
+    return { k: "ok", l: "En curso" };
+  }
+
+  $("titulo").textContent = "Avance S" + D.semana + " vs FCST";
+  $("lede").textContent = "Corte del " + fechaLarga(D.fecha) + ". Toneladas solicitadas en la semana " + D.anio + D.semana + " contra el FCST S" + D.semana + " que cargaste, solo SKU del Grupo Lácteos y Jugos.";
+
+  // ---------- KPIs ----------
+  var av = tot.s / tot.f;
+  $("kpis").innerHTML =
+    kpi(t(tot.f) + " t", "FCST S" + D.semana, "") +
+    kpi(t(tot.s) + " t", "Solicitado a la fecha", '<div class="meter"><i style="width:' + Math.min(100, av * 100) + '%"></i></div><span class="x">' + p(av) + " del FCST</span>") +
+    kpi(t(tot.f - tot.s) + " t", "Falta para llegar al FCST", "") +
+    kpi(t(tot.q) + " t", "Quebrado", '<span class="x" style="color:var(--crit)">' + p(tot.q / tot.s) + " de lo solicitado</span>");
+  function kpi(v, k, x) { return '<div class="kpi"><div class="v">' + v + '</div><div class="k">' + k + "</div>" + x + "</div>"; }
+
+  // ---------- barras ----------
+  var max = Math.max.apply(null, C.map(function (c) { return Math.max(c.FCST, c.Solicitado); }));
+  $("bars").innerHTML = C.map(function (c, i) {
+    var wf = c.FCST / max * 100, ws = c.Solicitado / max * 100;
+    return '<div class="bar-row"><div class="bar-name" title="' + esc(nombre(c.CADENA)) + '">' + esc(nombre(c.CADENA)) + '</div>' +
+      '<div class="bar-track" data-i="' + i + '"><span class="fcst" style="width:' + wf + '%"></span>' +
+      '<span class="sol" style="width:' + ws + '%"></span><span class="tick" style="left:calc(' + wf + '% - 1px)"></span></div>' +
+      '<div class="bar-pct">' + p(c["Avance %"]) + "</div></div>";
+  }).join("");
+  var tip = $("tip");
+  $("bars").addEventListener("mousemove", function (e) {
+    var tr = e.target.closest(".bar-track");
+    if (!tr) { tip.hidden = true; return; }
+    var c = C[+tr.dataset.i];
+    tip.innerHTML = '<div class="h">' + esc(nombre(c.CADENA)) + "</div>" +
+      row("FCST", t(c.FCST) + " t") + row("Solicitado", t(c.Solicitado) + " t") + row("Avance", p(c["Avance %"])) +
+      row(c["Falta vs FCST"] >= 0 ? "Falta" : "Sobre FCST", t(Math.abs(c["Falta vs FCST"])) + " t") +
+      row("Venta real", t(c["Venta Real"]) + " t") + row("Quebrado", t(c.Quebrados) + " t");
+    tip.hidden = false;
+    var x = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
+    tip.style.left = x + "px"; tip.style.top = (e.clientY + 14) + "px";
+  });
+  $("bars").addEventListener("mouseleave", function () { tip.hidden = true; });
+  function row(k, v) { return '<div class="r"><span>' + k + "</span><b>" + v + "</b></div>"; }
+
+  // ---------- alertas automáticas ----------
+  var skus = D.skus;
+  function topSku(cad, fn, n) { return skus.filter(function (s) { return s.CADENA === cad; }).sort(fn).slice(0, n); }
+  var notas = [];
+  var sobre = C.filter(function (c) { return c["Avance %"] >= 1; }).sort(function (a, b) { return a["Falta vs FCST"] - b["Falta vs FCST"]; });
+  sobre.forEach(function (c) {
+    var s = topSku(c.CADENA, function (a, b) { return (b.Solicitado - b.FCST) - (a.Solicitado - a.FCST); }, 2);
+    notas.push({ k: "warn", h: nombre(c.CADENA) + " ya pasó el FCST (" + p(c["Avance %"]) + ")",
+      b: "Lleva " + t(c.Solicitado) + " t contra " + t(c.FCST) + " t. Lo explican " + s.map(function (x) { return esc(x.Producto) + " (" + t(x.Solicitado) + " t vs " + t(x.FCST) + " t)"; }).join(" y ") + "." });
+  });
+  C.filter(function (c) { return c["Quiebre %"] >= 0.15 && c.Quebrados >= 5; }).sort(function (a, b) { return b.Quebrados - a.Quebrados; }).forEach(function (c) {
+    var s = topSku(c.CADENA, function (a, b) { return b.Quebrados - a.Quebrados; }, 2);
+    notas.push({ k: "crit", h: nombre(c.CADENA) + ": " + p(c["Quiebre %"]) + " de quiebre",
+      b: t(c.Quebrados) + " t quebradas de " + t(c.Solicitado) + " t solicitadas. Principalmente " + s.map(function (x) { return esc(x.Producto) + " (" + t(x.Quebrados) + " t)"; }).join(" y ") + "." });
+  });
+  var sinPed = C.filter(function (c) { return c.Solicitado <= 0 && c.FCST > 0; });
+  if (sinPed.length) notas.push({ k: "", h: "Sin pedidos todavía", b: sinPed.map(function (c) { return nombre(c.CADENA) + " (FCST " + t(c.FCST) + " t)"; }).join(", ") + "." });
+  $("alertas").innerHTML = notas.map(function (n) { return '<div class="note ' + n.k + '"><b>' + n.h + "</b>" + n.b + "</div>"; }).join("");
+
+  // ---------- tabla ----------
+  var head = '<thead><tr><th class="l">Cadena</th><th>FCST (t)</th><th>Solicitado (t)</th><th>Avance</th><th>Falta (t)</th><th>Venta real (t)</th><th>Quebrado (t)</th><th class="l">Estado</th></tr></thead>';
+  var body = C.map(function (c, i) {
+    var e = estado(c);
+    return '<tr class="cad" tabindex="0" aria-expanded="false" data-i="' + i + '"><td class="l"><span class="car">›</span> ' + esc(nombre(c.CADENA)) + "</td><td>" + t(c.FCST) + "</td><td>" + t(c.Solicitado) + "</td><td>" + p(c["Avance %"]) +
+      "</td><td>" + (c["Falta vs FCST"] < 0 ? '<span class="pos">+' + t(-c["Falta vs FCST"]) + " sobre</span>" : t(c["Falta vs FCST"])) + "</td><td>" + t(c["Venta Real"]) + "</td><td>" + t(c.Quebrados) +
+      '</td><td class="l"><span class="chip ' + e.k + '">' + e.l + "</span></td></tr>" +
+      '<tr class="det" hidden data-for="' + i + '"><td colspan="8"></td></tr>';
+  }).join("");
+  var totRow = '<tr class="tot"><td class="l">Total</td><td>' + t(tot.f) + "</td><td>" + t(tot.s) + "</td><td>" + p(av) + "</td><td>" + t(tot.f - tot.s) + "</td><td>" + t(tot.r) + "</td><td>" + t(tot.q) + '</td><td></td></tr>';
+  $("tbl").innerHTML = head + "<tbody>" + body + totRow + "</tbody>";
+
+  function detalle(cad) {
+    var l = skus.filter(function (s) { return s.CADENA === cad; }).sort(function (a, b) { return Math.abs(b.Solicitado - b.FCST) - Math.abs(a.Solicitado - a.FCST); });
+    return '<table class="sku"><thead><tr><th class="l">SKU</th><th class="l">Producto</th><th>FCST</th><th>Solicitado</th><th>Dif.</th><th>Avance</th><th>Quebrado</th></tr></thead><tbody>' +
+      l.map(function (s) {
+        var d = s.Solicitado - s.FCST; if (Math.abs(d) < 0.05) d = 0;
+        return '<tr><td class="l">' + s.SKU + '</td><td class="prod">' + esc(s.Producto) + "</td><td>" + t(s.FCST) + "</td><td>" + t(s.Solicitado) + '</td><td class="' + (d > 0 ? "pos" : "neg") + '">' + (d > 0 ? "+" : "") + t(d) +
+          "</td><td>" + (s.FCST > 0 ? p(s.Solicitado / s.FCST) : "sin FCST") + "</td><td>" + (s.Quebrados > 0 ? t(s.Quebrados) : "–") + "</td></tr>";
+      }).join("") + "</tbody></table>";
+  }
+  function toggle(tr) {
+    var i = tr.dataset.i, det = document.querySelector('tr.det[data-for="' + i + '"]');
+    var open = tr.getAttribute("aria-expanded") !== "true";
+    if (open && !det.firstChild.innerHTML) det.firstChild.innerHTML = detalle(C[+i].CADENA);
+    tr.setAttribute("aria-expanded", open); det.hidden = !open;
+  }
+  $("tbl").addEventListener("click", function (e) { var tr = e.target.closest("tr.cad"); if (tr) toggle(tr); });
+  $("tbl").addEventListener("keydown", function (e) { var tr = e.target.closest("tr.cad"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(tr); } });
+
+  // ---------- historia ----------
+  var H = D.historia || [];
+  if (H.length < 2) {
+    $("hist").innerHTML = '<div class="empty">Por ahora hay un solo corte (' + fechaLarga(H.length ? H[0].fecha : D.fecha) + ", " + p(av) + "). Desde el próximo archivo que cargues aparece la curva día a día.</div>";
+  } else {
+    var W = 640, Hh = 220, L = 44, R = 16, T = 18, B = 28;
+    var pts = H.map(function (h, i) { return { x: L + (W - L - R) * (H.length === 1 ? 0 : i / (H.length - 1)), v: h.total / tot.f, f: h.fecha }; });
+    var ymax = Math.max(1, Math.ceil(Math.max.apply(null, pts.map(function (q) { return q.v; })) * 4) / 4);
+    function y(v) { return T + (Hh - T - B) * (1 - v / ymax); }
+    var g = "";
+    for (var k = 0; k <= ymax + 1e-9; k += 0.25) g += '<line class="gl" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(k) + '" y2="' + y(k) + '"/><text class="ax" x="' + (L - 6) + '" y="' + (y(k) + 4) + '" text-anchor="end">' + Math.round(k * 100) + "%</text>";
+    g += '<polyline class="ln" points="' + pts.map(function (q) { return q.x + "," + y(q.v); }).join(" ") + '"/>';
+    pts.forEach(function (q, i) {
+      g += '<circle class="dot" cx="' + q.x + '" cy="' + y(q.v) + '" r="4"/><text class="ax" x="' + q.x + '" y="' + (Hh - 8) + '" text-anchor="middle">' + q.f.slice(8, 10) + "/" + q.f.slice(5, 7) + "</text>";
+      if (i === pts.length - 1) g += '<text class="lab" x="' + q.x + '" y="' + (y(q.v) - 10) + '" text-anchor="end">' + p(q.v) + "</text>";
+    });
+    $("hist").innerHTML = '<svg viewBox="0 0 ' + W + " " + Hh + '" role="img" aria-label="Avance total por día">' + g + "</svg>";
+  }
+
+  $("pie").innerHTML = "Solicitado, venta real y quebrado vienen del export de la base (semana " + D.anio + D.semana + "). El FCST es la columna S" + D.semana + " de la hoja FCST, sumada por cadena y SKU (Cencosud = Jumbo + Santa Isabel).<br>Hay " + skus.filter(function (s) { return s.FCST === 0 && s.Solicitado > 0; }).length + " SKU con pedidos que no tienen FCST en el archivo; suman " + t(skus.filter(function (s) { return s.FCST === 0; }).reduce(function (a, s) { return a + s.Solicitado; }, 0)) + " t.";
+})();
+</script>
