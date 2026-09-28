@@ -238,46 +238,62 @@
   <div class="divider"><span>Como lo vemos con logística · hoja Exactitud</span></div>
 
   <section class="panel">
-    <h2>Tabla de Exactitud del maestro, para los tres forecasts (S33 a S38)</h2>
-    <p class="sub">Mismo formato y mismo cálculo que la hoja Exactitud: fila por fila de BASE, Exactitud = 1 − Error / FCST, Ago agrupado y las semanas de septiembre abiertas. Los tres forecasts se miden sobre los mismos SKU × CD, los que revisa el equipo CPFR. Rojo = peor, verde = mejor, misma escala en las tres tablas.</p>
+    <h2>Tal como sale en la hoja Exactitud: FCST usado, S33 a S38</h2>
+    <p class="sub">El número oficial de siempre: todos los SKU de los 4 CD, fila por fila de BASE, Exactitud = 1 − Error / FCST. Coincide celda por celda con la tabla dinámica del maestro filtrada desde la semana 202633.</p>
+    <div class="pvs" id="pvOfficial"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Comparación pareja: los tres forecasts en los SKU que revisa el equipo CPFR</h2>
+    <p class="sub">Mismo formato y mismo cálculo que la hoja Exactitud, pero solo con los SKU × CD que están en Sugeridos vs Sistema (93 % de la venta de los 4 CD), para que el Sugerido y el Sistema tengan número en todas las filas. Rojo = peor, verde = mejor, misma escala en todas las tablas de esta sección.</p>
     <div class="pvs" id="pvs"></div>
     <div class="warnbox">
-      <b>Por qué estos porcentajes son más bajos que los de arriba:</b> acá se calcula fila por fila exactamente como la hoja Exactitud. Hasta la S35, los dos centros de Chillán llevan cada uno el FCST completo, y eso baja todos los porcentajes. Arriba se suma la venta de ambos centros. Las conclusiones son las mismas: el Sugerido le gana al Sistema (39 % contra 37 %) y el usado es igual al Sugerido.<br><br>
-      <b>Si en el comparador se eligen todos los SKU de los 4 CD</b>, el usado sale con 37 % y el Sugerido con 34 % (el Sistema, 31 %). Esa diferencia no es mejor pronóstico: en los SKU que el equipo CPFR no revisa, el usado tiene forecast y el Sugerido y el Sistema cuentan como 0.
+      <b>Por qué el usado da 37 % en la hoja y 39 % acá:</b> la hoja incluye también los SKU que el equipo CPFR no revisa (7 % de la venta), y esos tienen peor exactitud. Si esos SKU se dejaran en la comparación, el Sugerido y el Sistema contarían como 0 en ellos y quedarían castigados sin razón (34 % y 31 %).<br><br>
+      <b>Por qué estos porcentajes son más bajos que los de arriba del resumen:</b> la hoja calcula fila por fila, y hasta la S35 los dos centros de Chillán llevan cada uno el FCST completo, lo que baja los porcentajes. Arriba se suma la venta de ambos centros. La conclusión es la misma en las dos formas: el Sugerido le gana al Sistema (39 % contra 37 %) y el usado es igual al Sugerido.<br><br>
+      <b>Por qué la 202636 aparece dos veces:</b> esa semana va del lunes 31 de agosto al domingo 6 de septiembre, y BASE separa la venta por mes de distribución (253 t en agosto y 727 t en septiembre en los 4 CD). El FCST en cambio es semanal y queda en la fila que lo recibió al cargar BASE, así que las dos mitades por separado no se pueden leer como exactitud; <b>la cifra de la semana completa es 41 %</b>.
     </div>
   </section>
 
   <script>
   (function () {
-    var cols = [["Ago", ""], ["Sep", "202636"], ["Sep", "202637"], ["Sep", "202638"]];
+    var cols = ["202633", "202634", "202635", "202636", "202636", "202637", "202638"];
     var cds = ["CD ANTOFAGASTA", "CD CHILLAN", "CD LA SERENA", "CD OSORNO", "Total general"];
-    // exactitud en % por CD: Ago, 202636, 202637, 202638, Total general (comparador, SKU × CD de Sugeridos vs Sistema)
+    // exactitud en % por CD: Ago 202633..202636, Sep 202636..202638, Total general
+    var official = [
+      { name: "FCST usado (hoja Exactitud)", cls: "c", rows: [[43, 46, 48, 41, 35, 51, 55, 46], [31, 33, 31, 28, 49, 28, 45, 35], [41, 54, 61, 29, 43, 52, 51, 48], [42, 50, 50, 26, 33, 31, 7, 34], [34, 37, 36, 31, 45, 34, 42, 37]] }
+    ];
+    // comparador, solo SKU × CD de Sugeridos vs Sistema
     var data = [
-      { name: "FCST Sistema", cls: "a", rows: [[41, 36, 44, 41, 41], [33, 57, 32, 49, 37], [37, 33, 46, 35, 38], [40, 38, 38, 0, 35], [35, 49, 36, 41, 37]] },
-      { name: "Sugerido CPFR", cls: "b", rows: [[45, 36, 53, 59, 47], [33, 53, 32, 48, 37], [48, 44, 56, 52, 49], [42, 34, 40, 4, 35], [36, 48, 38, 45, 39]] },
-      { name: "FCST usado", cls: "c", rows: [[45, 36, 53, 59, 47], [33, 53, 32, 48, 37], [48, 44, 56, 52, 49], [42, 34, 41, 5, 36], [36, 48, 38, 45, 39]] }
+      { name: "FCST Sistema", cls: "a", rows: [[42, 38, 42, 41, 36, 44, 41, 41], [34, 34, 31, 33, 57, 32, 49, 37], [30, 46, 38, 32, 33, 46, 35, 38], [41, 49, 45, 23, 38, 38, 0, 35], [34, 37, 33, 31, 49, 36, 41, 37]] },
+      { name: "Sugerido CPFR", cls: "b", rows: [[44, 47, 49, 41, 36, 53, 59, 47], [33, 35, 32, 30, 53, 32, 48, 37], [41, 56, 62, 29, 44, 56, 52, 49], [40, 50, 52, 27, 34, 40, 4, 35], [35, 38, 36, 32, 48, 38, 45, 39]] },
+      { name: "FCST usado", cls: "c", rows: [[44, 47, 49, 41, 36, 53, 59, 47], [33, 35, 31, 30, 53, 32, 48, 37], [42, 56, 62, 29, 44, 56, 52, 49], [40, 51, 52, 27, 34, 41, 5, 36], [35, 38, 36, 32, 48, 38, 45, 39]] }
     ];
     function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
     function rgb(h) { h = h.replace("#", ""); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
     function mix(a, b, t) { a = rgb(a); b = rgb(b); return "rgb(" + a.map(function (v, i) { return Math.round(v + (b[i] - v) * t); }).join(",") + ")"; }
     function render() {
       var all = [];
-      data.forEach(function (d) { d.rows.forEach(function (r) { all = all.concat(r); }); });
+      official.concat(data).forEach(function (d) { d.rows.forEach(function (r) { all = all.concat(r); }); });
       all.sort(function (x, y) { return x - y; });
       var mn = all[0], mx = all[all.length - 1], md = all[Math.floor((all.length - 1) / 2)];
       var lo = css("--heat-lo"), mid = css("--heat-mid"), hi = css("--heat-hi");
       function col(v) { return v <= md ? mix(lo, mid, md === mn ? 1 : (v - mn) / (md - mn)) : mix(mid, hi, mx === md ? 0 : (v - md) / (mx - md)); }
-      document.getElementById("pvs").innerHTML = data.map(function (d) {
-        var head = '<thead><tr><th class="l">Suma de Exactitud</th><th class="l">Ago</th><th class="l" colspan="3">Sep</th><th class="tc" rowspan="2">Total general</th></tr>' +
-          '<tr><th class="l">Centro de Distribución</th>' + cols.map(function (c) { return "<th>" + c[1] + "</th>"; }).join("") + "</tr></thead>";
-        var body = d.rows.map(function (r, i) {
-          return '<tr' + (i === 4 ? ' class="gt"' : "") + "><th>" + cds[i] + "</th>" + r.map(function (v, j) {
-            return '<td' + (j === 4 ? ' class="tc"' : "") + ' style="background:' + col(v) + '">' + v + "%</td>";
-          }).join("") + "</tr>";
+      var last = cols.length;
+      function tables(list) {
+        return list.map(function (d) {
+          var head = '<thead><tr><th class="l">Suma de Exactitud</th><th class="l" colspan="4">Ago</th><th class="l" colspan="3">Sep</th><th class="tc" rowspan="2">Total general</th></tr>' +
+            '<tr><th class="l">Centro de Distribución</th>' + cols.map(function (c) { return "<th>" + c + "</th>"; }).join("") + "</tr></thead>";
+          var body = d.rows.map(function (r, i) {
+            return '<tr' + (i === 4 ? ' class="gt"' : "") + "><th>" + cds[i] + "</th>" + r.map(function (v, j) {
+              return '<td' + (j === last ? ' class="tc"' : "") + ' style="background:' + col(v) + '">' + v + "%</td>";
+            }).join("") + "</tr>";
+          }).join("");
+          return '<div><div class="pv-head"><span class="sw ' + d.cls + '"></span><h2>Exactitud · ' + d.name + '</h2><span class="tot">Total general <b>' + d.rows[4][last] + '%</b></span></div>' +
+            '<div class="tbl-wrap" style="margin-top:8px"><table class="pv">' + head + "<tbody>" + body + "</tbody></table></div></div>";
         }).join("");
-        return '<div><div class="pv-head"><span class="sw ' + d.cls + '"></span><h2>Exactitud · ' + d.name + '</h2><span class="tot">Total general <b>' + d.rows[4][4] + '%</b></span></div>' +
-          '<div class="tbl-wrap" style="margin-top:8px"><table class="pv">' + head + "<tbody>" + body + "</tbody></table></div></div>";
-      }).join("");
+      }
+      document.getElementById("pvOfficial").innerHTML = tables(official);
+      document.getElementById("pvs").innerHTML = tables(data);
     }
     render();
     try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render); } catch (e) {}
