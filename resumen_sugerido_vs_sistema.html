@@ -239,18 +239,13 @@
   <div class="divider"><span>Como lo vemos con logística · hoja Exactitud</span></div>
 
   <section class="panel">
-    <h2>Tal como sale en la hoja Exactitud: FCST usado, S33 a S38</h2>
-    <p class="sub">El número oficial de siempre: todos los SKU de los 4 CD, fila por fila de BASE, Exactitud = 1 − Error / FCST. Coincide celda por celda con la tabla dinámica del maestro filtrada desde la semana 202633.</p>
-    <div class="pvs" id="pvOfficial"></div>
-  </section>
-
-  <section class="panel">
-    <h2>Comparación pareja: los tres forecasts en los SKU que revisa el equipo CPFR</h2>
-    <p class="sub">Mismo formato y mismo cálculo que la hoja Exactitud, pero solo con los SKU × CD que están en Sugeridos vs Sistema (93 % de la venta de los 4 CD), para que el Sugerido y el Sistema tengan número en todas las filas. Rojo = peor, verde = mejor, misma escala en todas las tablas de esta sección.</p>
+    <h2>Hoja Exactitud para los tres forecasts, S33 a S38</h2>
+    <p class="sub">Mismo formato y mismo cálculo que la tabla dinámica del maestro: todos los SKU de los 4 CD, fila por fila de BASE, Exactitud = 1 − Error / FCST. La tabla del FCST usado es exactamente la hoja Exactitud filtrada desde la semana 202633. Rojo = peor, verde = mejor, misma escala en las tres tablas.</p>
     <div class="pvs" id="pvs"></div>
     <div class="warnbox">
-      <b>Por qué el usado da 37 % en la hoja y 39 % acá:</b> la hoja incluye también los SKU que el equipo CPFR no revisa (7 % de la venta), y esos tienen peor exactitud. Si esos SKU se dejaran en la comparación, el Sugerido y el Sistema contarían como 0 en ellos y quedarían castigados sin razón (34 % y 31 %).<br><br>
-      <b>Por qué estos porcentajes son más bajos que los de arriba del resumen:</b> la hoja calcula fila por fila, y hasta la S35 los dos centros de Chillán llevan cada uno el FCST completo, lo que baja los porcentajes. Arriba se suma la venta de ambos centros. La conclusión es la misma en las dos formas: el Sugerido le gana al Sistema (39 % contra 37 %) y el usado es igual al Sugerido.<br><br>
+      <b>Cómo se completan los SKU que no están en Sugeridos vs Sistema:</b> esa hoja solo lista las filas donde el equipo CPFR cambió el número del Sistema (en ningún cierre aparece una fila con Sugerido igual a Sistema). En el resto de los SKU el Sugerido y el Sistema son iguales a lo que se subió, así que se usa ese valor para los tres.<br><br>
+      <b>Resultado:</b> el Sugerido CPFR saca 37 % contra 35 % del Sistema, y es igual al usado. En error absoluto el Sistema se equivoca menos (4.475 t contra 4.899 t), porque el Sugerido sube el volumen y la fórmula divide por el FCST.<br><br>
+      <b>Por qué estos porcentajes son más bajos que los de arriba del resumen:</b> la hoja calcula fila por fila, y hasta la S35 los dos centros de Chillán llevan cada uno el FCST completo, lo que baja los porcentajes. Arriba se suma la venta de ambos centros y se miran solo los SKU que el equipo CPFR cambió. La conclusión es la misma en las dos formas: el Sugerido le gana al Sistema en exactitud y el usado es igual al Sugerido.<br><br>
       <b>La columna Ago incluye un día de la 202636:</b> esa semana va del lunes 31 de agosto al domingo 6 de septiembre, y BASE separa la venta por mes de distribución (253 t en agosto y 727 t en septiembre en los 4 CD). Lo del 31 de agosto queda dentro de Ago y el resto en la columna 202636 de Sep. Como el FCST es semanal, la exactitud de la semana completa se lee mejor junta: <b>41 % para el usado</b>.
     </div>
   </section>
@@ -261,14 +256,12 @@
     var cols = ["", "202636", "202637", "202638"];
     var cds = ["CD ANTOFAGASTA", "CD CHILLAN", "CD LA SERENA", "CD OSORNO", "Total general"];
     // exactitud en % por CD: Ago, 202636, 202637, 202638, Total general
-    var official = [
-      { name: "FCST usado (hoja Exactitud)", cls: "c", rows: [[44, 35, 51, 55, 46], [32, 49, 28, 45, 35], [47, 43, 52, 51, 48], [42, 33, 31, 7, 34], [35, 45, 34, 42, 37]] }
-    ];
-    // comparador, solo SKU × CD de Sugeridos vs Sistema
+    // todos los SKU de los 4 CD; donde no hay fila en Sugeridos vs Sistema, Sistema = Sugerido = FCST usado
+    var official = [];
     var data = [
-      { name: "FCST Sistema", cls: "a", rows: [[41, 36, 44, 41, 41], [33, 57, 32, 49, 37], [37, 33, 46, 35, 38], [40, 38, 38, 0, 35], [35, 49, 36, 41, 37]] },
-      { name: "Sugerido CPFR", cls: "b", rows: [[45, 36, 53, 59, 47], [33, 53, 32, 48, 37], [48, 44, 56, 52, 49], [42, 34, 40, 4, 35], [36, 48, 38, 45, 39]] },
-      { name: "FCST usado", cls: "c", rows: [[45, 36, 53, 59, 47], [33, 53, 32, 48, 37], [48, 44, 56, 52, 49], [42, 34, 41, 5, 36], [36, 48, 38, 45, 39]] }
+      { name: "FCST Sistema", cls: "a", rows: [[40, 36, 43, 37, 39], [32, 52, 28, 45, 35], [36, 32, 42, 35, 36], [40, 36, 29, 2, 33], [34, 46, 31, 37, 35]] },
+      { name: "Sugerido CPFR", cls: "b", rows: [[44, 35, 51, 55, 46], [32, 49, 28, 45, 35], [47, 43, 52, 51, 48], [42, 33, 30, 5, 33], [35, 45, 34, 42, 37]] },
+      { name: "FCST usado (= hoja Exactitud)", cls: "c", rows: [[44, 35, 51, 55, 46], [32, 49, 28, 45, 35], [47, 43, 52, 51, 48], [42, 33, 31, 7, 34], [35, 45, 34, 42, 37]] }
     ];
     function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
     function rgb(h) { h = h.replace("#", ""); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
@@ -294,7 +287,6 @@
             '<div class="tbl-wrap" style="margin-top:8px"><table class="pv">' + head + "<tbody>" + body + "</tbody></table></div></div>";
         }).join("");
       }
-      document.getElementById("pvOfficial").innerHTML = tables(official);
       document.getElementById("pvs").innerHTML = tables(data);
     }
     render();

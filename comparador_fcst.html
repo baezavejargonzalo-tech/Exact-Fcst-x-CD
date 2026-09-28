@@ -1009,6 +1009,11 @@
     };
   }
 
+  // Sugeridos vs Sistema solo lista las filas donde el equipo CPFR cambio el numero del Sistema
+  // (nunca trae una fila con Sugerido = Sistema). En los demas SKU el Sistema y el Sugerido son
+  // iguales a lo que se subio, asi que se completan con el FCST usado de la hoja FCST del maestro.
+  function fillFromUsed(src, used) { return src === "sistema" || src === "sugerido" ? used : 0; }
+
   function seriesHas(S, w) { return S.map(function (m) { var x = m ? m.get(w) : null; return !!x && x.size > 0; }); }
 
   // Modo "sobre la venta real": se suma todo por CD x SKU x semana y despues se compara
@@ -1019,6 +1024,7 @@
       var F = S.map(function (m) { return m ? m.get(w) || null : null; });
       var has = seriesHas(S, w), comp = has.every(Boolean);
       hasW.push(has);
+      var Mu = state.masterFcst ? state.masterFcst.get(w) : null;
       var keys = new Set();
       function add(v, k) { keys.add(k); }
       if (inp.universe === "svs" && inp.svs) { var sv = inp.svs.get(w); if (sv) sv.forEach(add); }
@@ -1028,7 +1034,10 @@
         if (inp.cdSet && !inp.cdSet.has(m.cd)) return;
         if (filt && !filt(m.sku)) return;
         var r = R.get(k) || 0;
-        var f = F.map(function (x) { return x ? (x.get(k) || 0) : 0; });
+        var f = F.map(function (x, q) {
+          if (!x) return 0;
+          return x.has(k) ? x.get(k) : fillFromUsed(inp.srcs ? inp.srcs[q] : null, Mu ? (Mu.get(k) || 0) : 0);
+        });
         if (!r && f.every(function (v) { return !v; })) return;
         C.add(w, monthOfSem(w), m.cd, m.sku, k, r, f, comp);
       });
@@ -1069,7 +1078,8 @@
         var share = rc.tb !== null && (rc.tb > 0 || fu > 0) ? (rc.tb > 0 ? 1 : 0) : (conv === "all" || rc.first ? 1 : 0);
         var f = F.map(function (x, q) {
           if (inp.srcs[q] === "master") return rc.tb !== null ? rc.tb : fu * share;
-          return x ? (x.get(rc.key) || 0) * share : 0;
+          if (!x) return 0;
+          return (x.has(rc.key) ? x.get(rc.key) : fillFromUsed(inp.srcs[q], fu)) * share;
         });
         // el FCST usado lleva el Error tal como esta en BASE (columna U)
         var fixedE = inp.srcs.map(function (src) { return src === "master" && rc.tb !== null && rc.ub !== null ? rc.ub : null; });
