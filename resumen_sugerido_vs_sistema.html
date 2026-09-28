@@ -222,6 +222,7 @@
           <tr><td>Nutra Max 20x1kg</td><td>15,3 t</td><td>0,0 t</td><td>0,0 t</td></tr>
         </tbody>
       </table></div>
+      <p class="sub" style="margin:0">Real = Cantidad Solicitada de la S39 en Chillán, sumando Planta Chillán (D106) y CD Temuco (D009). Ej.: Leche Lonco Entera 30,0 t = 28,5 t de D106 + 1,6 t de D009.</p>
       <p class="sub" style="margin:0">SKU a SKU el Sugerido acertó mejor en más productos (858 contra 755), pero cuando el Sistema ganó fue en SKU grandes: 330 t menos de error contra 142 t, y 258 t de eso en Chillán.</p>
     </section>
   </div>
@@ -250,23 +251,24 @@
     <div class="warnbox">
       <b>Por qué el usado da 37 % en la hoja y 39 % acá:</b> la hoja incluye también los SKU que el equipo CPFR no revisa (7 % de la venta), y esos tienen peor exactitud. Si esos SKU se dejaran en la comparación, el Sugerido y el Sistema contarían como 0 en ellos y quedarían castigados sin razón (34 % y 31 %).<br><br>
       <b>Por qué estos porcentajes son más bajos que los de arriba del resumen:</b> la hoja calcula fila por fila, y hasta la S35 los dos centros de Chillán llevan cada uno el FCST completo, lo que baja los porcentajes. Arriba se suma la venta de ambos centros. La conclusión es la misma en las dos formas: el Sugerido le gana al Sistema (39 % contra 37 %) y el usado es igual al Sugerido.<br><br>
-      <b>Por qué la 202636 aparece dos veces:</b> esa semana va del lunes 31 de agosto al domingo 6 de septiembre, y BASE separa la venta por mes de distribución (253 t en agosto y 727 t en septiembre en los 4 CD). El FCST en cambio es semanal y queda en la fila que lo recibió al cargar BASE, así que las dos mitades por separado no se pueden leer como exactitud; <b>la cifra de la semana completa es 41 %</b>.
+      <b>La columna Ago incluye un día de la 202636:</b> esa semana va del lunes 31 de agosto al domingo 6 de septiembre, y BASE separa la venta por mes de distribución (253 t en agosto y 727 t en septiembre en los 4 CD). Lo del 31 de agosto queda dentro de Ago y el resto en la columna 202636 de Sep. Como el FCST es semanal, la exactitud de la semana completa se lee mejor junta: <b>41 % para el usado</b>.
     </div>
   </section>
 
   <script>
   (function () {
-    var cols = ["202633", "202634", "202635", "202636", "202636", "202637", "202638"];
+    // columnas como la tabla dinámica: Ago agrupado (S33 a S35 y el 31 de agosto de la S36), Sep abierto por semana
+    var cols = ["", "202636", "202637", "202638"];
     var cds = ["CD ANTOFAGASTA", "CD CHILLAN", "CD LA SERENA", "CD OSORNO", "Total general"];
-    // exactitud en % por CD: Ago 202633..202636, Sep 202636..202638, Total general
+    // exactitud en % por CD: Ago, 202636, 202637, 202638, Total general
     var official = [
-      { name: "FCST usado (hoja Exactitud)", cls: "c", rows: [[43, 46, 48, 41, 35, 51, 55, 46], [31, 33, 31, 28, 49, 28, 45, 35], [41, 54, 61, 29, 43, 52, 51, 48], [42, 50, 50, 26, 33, 31, 7, 34], [34, 37, 36, 31, 45, 34, 42, 37]] }
+      { name: "FCST usado (hoja Exactitud)", cls: "c", rows: [[44, 35, 51, 55, 46], [32, 49, 28, 45, 35], [47, 43, 52, 51, 48], [42, 33, 31, 7, 34], [35, 45, 34, 42, 37]] }
     ];
     // comparador, solo SKU × CD de Sugeridos vs Sistema
     var data = [
-      { name: "FCST Sistema", cls: "a", rows: [[42, 38, 42, 41, 36, 44, 41, 41], [34, 34, 31, 33, 57, 32, 49, 37], [30, 46, 38, 32, 33, 46, 35, 38], [41, 49, 45, 23, 38, 38, 0, 35], [34, 37, 33, 31, 49, 36, 41, 37]] },
-      { name: "Sugerido CPFR", cls: "b", rows: [[44, 47, 49, 41, 36, 53, 59, 47], [33, 35, 32, 30, 53, 32, 48, 37], [41, 56, 62, 29, 44, 56, 52, 49], [40, 50, 52, 27, 34, 40, 4, 35], [35, 38, 36, 32, 48, 38, 45, 39]] },
-      { name: "FCST usado", cls: "c", rows: [[44, 47, 49, 41, 36, 53, 59, 47], [33, 35, 31, 30, 53, 32, 48, 37], [42, 56, 62, 29, 44, 56, 52, 49], [40, 51, 52, 27, 34, 41, 5, 36], [35, 38, 36, 32, 48, 38, 45, 39]] }
+      { name: "FCST Sistema", cls: "a", rows: [[41, 36, 44, 41, 41], [33, 57, 32, 49, 37], [37, 33, 46, 35, 38], [40, 38, 38, 0, 35], [35, 49, 36, 41, 37]] },
+      { name: "Sugerido CPFR", cls: "b", rows: [[45, 36, 53, 59, 47], [33, 53, 32, 48, 37], [48, 44, 56, 52, 49], [42, 34, 40, 4, 35], [36, 48, 38, 45, 39]] },
+      { name: "FCST usado", cls: "c", rows: [[45, 36, 53, 59, 47], [33, 53, 32, 48, 37], [48, 44, 56, 52, 49], [42, 34, 41, 5, 36], [36, 48, 38, 45, 39]] }
     ];
     function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
     function rgb(h) { h = h.replace("#", ""); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
@@ -281,7 +283,7 @@
       var last = cols.length;
       function tables(list) {
         return list.map(function (d) {
-          var head = '<thead><tr><th class="l">Suma de Exactitud</th><th class="l" colspan="4">Ago</th><th class="l" colspan="3">Sep</th><th class="tc" rowspan="2">Total general</th></tr>' +
+          var head = '<thead><tr><th class="l">Suma de Exactitud</th><th class="l">⊞ Ago</th><th class="l" colspan="3">⊟ Sep</th><th class="tc" rowspan="2">Total general</th></tr>' +
             '<tr><th class="l">Centro de Distribución</th>' + cols.map(function (c) { return "<th>" + c + "</th>"; }).join("") + "</tr></thead>";
           var body = d.rows.map(function (r, i) {
             return '<tr' + (i === 4 ? ' class="gt"' : "") + "><th>" + cds[i] + "</th>" + r.map(function (v, j) {
