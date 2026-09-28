@@ -109,35 +109,35 @@
 <div class="wrap">
   <header>
     <p class="eyebrow">Exactitud del forecast · 4 CD revisados por CPFR · S33 a S39 2026</p>
-    <h1>El Sugerido CPFR es más exacto que el FCST Sistema en las 6 semanas y en los 4 CD</h1>
-    <p class="lede">Comparación del forecast automático (FCST Sistema, promedio) con el Sugerido que envía el equipo CPFR aplicando nuestras restricciones, medidos contra la Cantidad Solicitada de BASE con la misma fórmula de la hoja Exactitud: 1 − Error / FCST.</p>
+    <h1>Con nuestra hoja Exactitud, el Sugerido CPFR es más exacto que el FCST Sistema: 36,8 % contra 35,0 %</h1>
+    <p class="lede">Comparación del forecast automático (FCST Sistema, promedio) con el Sugerido que envía el equipo CPFR aplicando nuestras restricciones, medidos igual que la tabla dinámica Exactitud del maestro: todos los SKU de los 4 CD, fila por fila de BASE, contra la Cantidad Solicitada, con Exactitud = 1 − Error / FCST.</p>
   </header>
 
   <section class="kpis" aria-label="Resumen">
     <div class="kpi">
-      <div class="lbl">Exactitud (fórmula de la hoja Exactitud)</div>
-      <div class="pair"><span class="v b">47,9 %</span><span class="vs">Sugerido</span><span class="v a">44,1 %</span><span class="vs">Sistema</span><span class="v c">48,0 %</span><span class="vs">Usado</span></div>
-      <span class="tag good">+3,8 puntos · gana las 6 semanas (S33–S38) y los 4 CD</span>
+      <div class="lbl">Exactitud (hoja Exactitud, S33 a S38)</div>
+      <div class="pair"><span class="v b">36,8 %</span><span class="vs">Sugerido</span><span class="v a">35,0 %</span><span class="vs">Sistema</span><span class="v c">36,8 %</span><span class="vs">Usado</span></div>
+      <span class="tag good">+1,8 puntos · gana 5 de 6 semanas y 3 de 4 CD</span>
     </div>
     <div class="kpi">
-      <div class="lbl">Sesgo del volumen total</div>
-      <div class="pair"><span class="v b">+2,0 %</span><span class="vs">Sugerido</span><span class="v a">−10,2 %</span><span class="vs">Sistema</span><span class="v c">+2,1 %</span><span class="vs">Usado</span></div>
-      <span class="tag good">El Sistema se queda corto; el Sugerido queda casi igual a la venta</span>
-      <div class="note">Venta real 5.341 t · Sugerido 5.449 t · Sistema 4.797 t · Usado 5.453 t</div>
+      <div class="lbl">Volumen pronosticado vs pedido</div>
+      <div class="pair"><span class="v b">+7,8 %</span><span class="vs">Sugerido</span><span class="v a">−4,0 %</span><span class="vs">Sistema</span><span class="v c">+7,9 %</span><span class="vs">Usado</span></div>
+      <span class="tag warn">El Sugerido tiende a pronosticar de más</span>
+      <div class="note">Pedido real 5.717 t · Sugerido 6.164 t · Sistema 5.490 t · Usado 6.169 t</div>
     </div>
     <div class="kpi">
-      <div class="lbl">Error absoluto SKU a SKU</div>
-      <div class="pair"><span class="v b">2.839 t</span><span class="vs">Sugerido</span><span class="v a">2.684 t</span><span class="vs">Sistema</span><span class="v c">2.838 t</span><span class="vs">Usado</span></div>
-      <span class="tag warn">Sin la S38: 2.363 t vs 2.329 t (prácticamente iguales)</span>
+      <div class="lbl">Error absoluto (suma de la columna Error)</div>
+      <div class="pair"><span class="v b">4.899 t</span><span class="vs">Sugerido</span><span class="v a">4.475 t</span><span class="vs">Sistema</span><span class="v c">4.898 t</span><span class="vs">Usado</span></div>
+      <span class="tag warn">El Sistema se equivoca menos en toneladas</span>
     </div>
   </section>
 
   <section class="panel">
     <h2>Mensaje para logística</h2>
     <ul class="points">
-      <li><b>El Sugerido corrige el sesgo del Sistema.</b> El promedio automático pronostica 10 % menos de lo que se pide; el Sugerido queda a +2 % del volumen real.</li>
-      <li><b>De la S33 a la S38, el Sugerido ganó en todas las semanas y en los 4 CD</b>, con +3,8 puntos en total, medido con la fórmula de nuestra hoja Exactitud (1 − Error / FCST). En la S39 no fue así: ganó en La Serena y perdió en Chillán (ver abajo).</li>
-      <li><b>SKU a SKU el error es parecido.</b> El Sugerido acierta el volumen total pero todavía se equivoca en la mezcla de SKU; el siguiente paso es afinar los SKU de mayor volumen de Chillán.</li>
+      <li><b>Con la métrica que usamos siempre (hoja Exactitud), el Sugerido CPFR gana:</b> 36,8 % contra 35,0 % entre la S33 y la S38, en 5 de las 6 semanas (la S36 la gana el Sistema por 0,9 puntos).</li>
+      <li><b>La ganancia está en los CD regionales:</b> La Serena +11,6 puntos y Antofagasta +6,1. En Osorno es casi igual y en Chillán, que tiene dos tercios de la venta, empatan.</li>
+      <li><b>El Sugerido tiende a inflar el volumen:</b> pronostica 7,8 % más de lo que se pide, mientras el Sistema queda 4 % abajo. Por eso en toneladas de error el Sistema se equivoca menos. El siguiente paso es ajustar las restricciones para no inflar el volumen, sobre todo en Chillán y en semanas post-feriado.</li>
       <li><b>El FCST que se sube (usado) es el Sugerido</b> en el 99,6 % de las filas, así que estos resultados son los del forecast que realmente opera.</li>
       <li><b>En la S39, la semana después de Fiestas Patrias, el Sugerido se pasó en Chillán</b> (+37 % sobre lo pedido). No aplicarlo ahí fue la decisión correcta: en semanas post-feriado hay que ajustar las restricciones para no inflar el volumen.</li>
     </ul>
@@ -150,15 +150,16 @@
       <div class="tbl-wrap"><table>
         <thead><tr><th>Semana</th><th>Sugerido</th><th>Sistema</th><th>Usado</th><th>Sug. − Sist.</th><th></th></tr></thead>
         <tbody>
-          <tr><td>S33</td><td>52,5 %</td><td>49,7 %</td><td>52,6 %</td><td class="pos">+2,8</td><td class="bar"><div class="bars"><span class="b" style="width:52.5%"></span><span class="a" style="width:49.7%"></span><span class="c" style="width:52.6%"></span></div></td></tr>
-          <tr><td>S34</td><td>51,4 %</td><td>43,9 %</td><td>51,5 %</td><td class="pos">+7,5</td><td class="bar"><div class="bars"><span class="b" style="width:51.4%"></span><span class="a" style="width:43.9%"></span><span class="c" style="width:51.5%"></span></div></td></tr>
-          <tr><td>S35</td><td>49,9 %</td><td>44,2 %</td><td>49,7 %</td><td class="pos">+5,7</td><td class="bar"><div class="bars"><span class="b" style="width:49.9%"></span><span class="a" style="width:44.2%"></span><span class="c" style="width:49.7%"></span></div></td></tr>
-          <tr><td>S36</td><td>50,5 %</td><td>49,4 %</td><td>50,5 %</td><td class="pos">+1,1</td><td class="bar"><div class="bars"><span class="b" style="width:50.5%"></span><span class="a" style="width:49.4%"></span><span class="c" style="width:50.5%"></span></div></td></tr>
-          <tr><td>S37</td><td>38,3 %</td><td>36,0 %</td><td>38,4 %</td><td class="pos">+2,3</td><td class="bar"><div class="bars"><span class="b" style="width:38.3%"></span><span class="a" style="width:36.0%"></span><span class="c" style="width:38.4%"></span></div></td></tr>
-          <tr><td>S38</td><td>44,7 %</td><td>40,6 %</td><td>44,8 %</td><td class="pos">+4,1</td><td class="bar"><div class="bars"><span class="b" style="width:44.7%"></span><span class="a" style="width:40.6%"></span><span class="c" style="width:44.8%"></span></div></td></tr>
-          <tr class="tot"><td>Total</td><td>47,9 %</td><td>44,1 %</td><td>48,0 %</td><td class="pos">+3,8</td><td></td></tr>
+          <tr><td>S33</td><td>33,7 %</td><td>32,9 %</td><td>33,7 %</td><td class="pos">+0,8</td><td class="bar"><div class="bars"><span class="b" style="width:33.7%"></span><span class="a" style="width:32.9%"></span><span class="c" style="width:33.7%"></span></div></td></tr>
+          <tr><td>S34</td><td>36,5 %</td><td>35,3 %</td><td>36,6 %</td><td class="pos">+1,2</td><td class="bar"><div class="bars"><span class="b" style="width:36.5%"></span><span class="a" style="width:35.3%"></span><span class="c" style="width:36.6%"></span></div></td></tr>
+          <tr><td>S35</td><td>35,6 %</td><td>32,6 %</td><td>35,5 %</td><td class="pos">+3,0</td><td class="bar"><div class="bars"><span class="b" style="width:35.6%"></span><span class="a" style="width:32.6%"></span><span class="c" style="width:35.5%"></span></div></td></tr>
+          <tr><td>S36</td><td>41,1 %</td><td>42,0 %</td><td>41,1 %</td><td class="neg">−0,9</td><td class="bar"><div class="bars"><span class="b" style="width:41.1%"></span><span class="a" style="width:42.0%"></span><span class="c" style="width:41.1%"></span></div></td></tr>
+          <tr><td>S37</td><td>33,7 %</td><td>31,2 %</td><td>33,8 %</td><td class="pos">+2,5</td><td class="bar"><div class="bars"><span class="b" style="width:33.7%"></span><span class="a" style="width:31.2%"></span><span class="c" style="width:33.8%"></span></div></td></tr>
+          <tr><td>S38</td><td>42,1 %</td><td>37,3 %</td><td>42,2 %</td><td class="pos">+4,8</td><td class="bar"><div class="bars"><span class="b" style="width:42.1%"></span><span class="a" style="width:37.3%"></span><span class="c" style="width:42.2%"></span></div></td></tr>
+          <tr class="tot"><td>Total</td><td>36,8 %</td><td>35,0 %</td><td>36,8 %</td><td class="pos">+1,8</td><td></td></tr>
         </tbody>
       </table></div>
+      <p class="sub" style="margin:0">Semanas completas: la S36 junta lo del 31 de agosto con lo de septiembre.</p>
       <p class="sub" style="margin:0">El usado queda casi igual al Sugerido porque en el 99,6 % de las filas es el mismo número: las diferencias son los ajustes posteriores (desbloqueos y cambios manuales).</p>
     </section>
     <section class="panel">
@@ -167,14 +168,14 @@
       <div class="tbl-wrap"><table>
         <thead><tr><th>CD</th><th>Sugerido</th><th>Sistema</th><th>Usado</th><th>Sug. − Sist.</th><th>Venta (t)</th></tr></thead>
         <tbody>
-          <tr><td>La Serena</td><td>52,9 %</td><td>38,9 %</td><td>53,0 %</td><td class="pos">+14,0</td><td>641</td></tr>
-          <tr><td>Antofagasta</td><td>49,3 %</td><td>40,0 %</td><td>49,3 %</td><td class="pos">+9,3</td><td>451</td></tr>
-          <tr><td>Chillán</td><td>48,4 %</td><td>46,7 %</td><td>48,4 %</td><td class="pos">+1,7</td><td>3.606</td></tr>
-          <tr><td>Osorno</td><td>38,6 %</td><td>37,7 %</td><td>39,1 %</td><td class="pos">+0,9</td><td>643</td></tr>
-          <tr class="tot"><td>Total</td><td>47,9 %</td><td>44,1 %</td><td>48,0 %</td><td class="pos">+3,8</td><td>5.341</td></tr>
+          <tr><td>La Serena</td><td>47,8 %</td><td>36,2 %</td><td>47,9 %</td><td class="pos">+11,6</td><td>657</td></tr>
+          <tr><td>Antofagasta</td><td>45,5 %</td><td>39,4 %</td><td>45,5 %</td><td class="pos">+6,1</td><td>471</td></tr>
+          <tr><td>Osorno</td><td>33,5 %</td><td>33,2 %</td><td>34,0 %</td><td class="pos">+0,3</td><td>700</td></tr>
+          <tr><td>Chillán</td><td>34,7 %</td><td>34,7 %</td><td>34,7 %</td><td>0,0</td><td>3.890</td></tr>
+          <tr class="tot"><td>Total</td><td>36,8 %</td><td>35,0 %</td><td>36,8 %</td><td class="pos">+1,8</td><td>5.717</td></tr>
         </tbody>
       </table></div>
-      <p class="sub" style="margin:0">La mayor ganancia está en los CD chicos. Chillán concentra dos tercios de la venta y ahí la mejora es menor.</p>
+      <p class="sub" style="margin:0">La ganancia está en los CD regionales. Chillán concentra dos tercios de la venta y ahí el Sugerido y el Sistema empatan.</p>
     </section>
   </div>
 
@@ -186,9 +187,9 @@
     <div class="tbl-wrap"><table>
       <thead><tr><th>Opción</th><th>Forecast</th><th>Exactitud</th><th>Error absoluto</th><th>Sesgo</th></tr></thead>
       <tbody>
-        <tr><td>Todo con Sugerido CPFR</td><td>1.185 t</td><td>38,1 %</td><td>733 t</td><td class="neg">+26 %</td></tr>
-        <tr class="best"><td><b>Lo que se hizo</b> (Sugerido en Antofagasta y La Serena, Sistema en Chillán y Osorno)</td><td>935 t</td><td class="win">40,6 %</td><td>555 t</td><td>−1 %</td></tr>
-        <tr><td>Todo con FCST Sistema</td><td>894 t</td><td>39,0 %</td><td class="win">546 t</td><td>−5 %</td></tr>
+        <tr><td>Todo con Sugerido CPFR</td><td>1.238 t</td><td>38,1 %</td><td>733 t</td><td class="neg">+31 %</td></tr>
+        <tr class="best"><td><b>Lo que se hizo</b> (Sugerido en Antofagasta y La Serena, Sistema en Chillán y Osorno)</td><td>962 t</td><td class="win">40,6 %</td><td>555 t</td><td>+2 %</td></tr>
+        <tr><td>Todo con FCST Sistema</td><td>917 t</td><td>39,0 %</td><td class="win">546 t</td><td>−3 %</td></tr>
       </tbody>
     </table></div>
     <p class="sub" style="margin:0">Lo que se hizo fue la mejor opción en exactitud; usar el Sugerido en los 4 CD habría sido la peor. Sin el pedido atípico de Osorno el orden se mantiene: 42,9 % / 45,6 % / 44,3 %.</p>
@@ -208,7 +209,7 @@
         </tbody>
       </table></div>
       <p class="sub" style="margin:0">El usado es el Sugerido en Antofagasta y La Serena, y el Sistema en Chillán y Osorno.</p>
-      <p class="sub" style="margin:0">Antofagasta: el Sugerido pronosticó 69 % más de lo pedido. Osorno: los dos quedan en 0 % por un solo pedido atípico; sin él, ~46 % cada uno.</p>
+      <p class="sub" style="margin:0">Antofagasta: el Sugerido pronosticó 79 % más de lo pedido (100 t contra 56 t). Osorno: los dos quedan en 0 % por un solo pedido atípico; sin él, ~46 % cada uno.</p>
     </section>
     <section class="panel">
       <h2>S39: dónde se pasó el Sugerido en Chillán</h2>
@@ -230,8 +231,9 @@
   <section class="panel">
     <h2>Si preguntan</h2>
     <div class="warnbox">
-      <b>Por qué el error absoluto no baja:</b> la fórmula de la hoja Exactitud divide el error por el forecast, así que premia al forecast que no se queda corto. El Sugerido sube el volumen y gana en esa métrica, pero SKU a SKU se equivoca parecido al Sistema (2.839 t contra 2.684 t en S33–S38). Casi toda esa diferencia es de la S38.<br><br>
-      <b>S38 hay que revisarla:</b> esa semana el Sugerido fue muy superior al Sistema (902 t contra 635 t) y la hoja FCST del maestro tiene 25 filas distintas al cierre 202637 (unas 50 t más). Sin la S38, la exactitud queda 48,5 % contra 44,5 % y el error absoluto es prácticamente el mismo.<br><br>
+      <b>Por qué el Sugerido gana en exactitud pero no en toneladas de error:</b> la fórmula de la hoja Exactitud divide el error por el forecast, así que premia al forecast que no se queda corto. El Sugerido sube el volumen (+7,8 %) y gana en esa métrica, pero en toneladas se equivoca más que el Sistema (4.899 t contra 4.475 t).<br><br>
+      <b>S38 hay que revisarla:</b> esa semana el Sugerido pronosticó 1.029 t contra 669 t pedidas (+54 %; el Sistema, 762 t). Es la semana que más empuja su error (528 t contra 406 t del Sistema). Además, la hoja FCST del maestro tiene 25 filas distintas al cierre 202637 (unas 50 t más).<br><br>
+      <b>Por qué el volumen se mide aparte:</b> el volumen compara el FCST total de la hoja FCST (con Sistema y Sugerido donde el equipo CPFR los cambió) contra la Cantidad Solicitada total. No se toma de la columna FCST de BASE porque ahí algunas semanas lo cuentan dos veces: los dos centros de Chillán hasta la S35 y la S36 partida entre agosto y septiembre.<br><br>
       <b>Leche Lonco Entera 12x1 tiene pedidos erráticos:</b> 96 t en Chillán en la S37, y en Osorno 37 t en la S38 y 65 t en la S39, cuando lo normal ahí son unas 2 t por semana. Ese solo pedido deja a Osorno en 0 % en la S39 para cualquier forecast. Conviene confirmar con logística si son traspasos o pedidos especiales.
     </div>
   </section>
@@ -244,8 +246,7 @@
     <div class="pvs" id="pvs"></div>
     <div class="warnbox">
       <b>Cómo se completan los SKU que no están en Sugeridos vs Sistema:</b> esa hoja solo lista las filas donde el equipo CPFR cambió el número del Sistema (en ningún cierre aparece una fila con Sugerido igual a Sistema). En el resto de los SKU el Sugerido y el Sistema son iguales a lo que se subió, así que se usa ese valor para los tres.<br><br>
-      <b>Resultado:</b> el Sugerido CPFR saca 37 % contra 35 % del Sistema, y es igual al usado. En error absoluto el Sistema se equivoca menos (4.475 t contra 4.899 t), porque el Sugerido sube el volumen y la fórmula divide por el FCST.<br><br>
-      <b>Por qué estos porcentajes son más bajos que los de arriba del resumen:</b> la hoja calcula fila por fila, y hasta la S35 los dos centros de Chillán llevan cada uno el FCST completo, lo que baja los porcentajes. Arriba se suma la venta de ambos centros y se miran solo los SKU que el equipo CPFR cambió. La conclusión es la misma en las dos formas: el Sugerido le gana al Sistema en exactitud y el usado es igual al Sugerido.<br><br>
+      <b>Estas tablas son el detalle de los números de arriba:</b> el Sugerido CPFR saca 37 % contra 35 % del Sistema, y es igual al usado.<br><br>
       <b>La columna Ago incluye un día de la 202636:</b> esa semana va del lunes 31 de agosto al domingo 6 de septiembre, y BASE separa la venta por mes de distribución (253 t en agosto y 727 t en septiembre en los 4 CD). Lo del 31 de agosto queda dentro de Ago y el resto en la columna 202636 de Sep. Como el FCST es semanal, la exactitud de la semana completa se lee mejor junta: <b>41 % para el usado</b>.
     </div>
   </section>
@@ -296,6 +297,6 @@
   </script>
 
   <footer>
-    Fuente: maestro FCSTxCD_S38-2026 (hoja BASE, Cantidad Solicitada) y hojas Sugeridos vs Sistema de los Cierre x CD 202632 a 202637 (forecast de S33 a S38). FCST usado = hoja FCST del maestro, es decir el Cierre x CD que realmente se subió. Se comparan los SKU × CD que el equipo CPFR revisó (93 % de la venta de los 4 CD), los mismos para los tres forecasts. Error medido por CD × SKU × semana; la venta de los dos centros de Chillán (D106 y D009) se suma. Exactitud = 1 − ΣError / ΣFCST, sin bajar de 0 %. Con el cálculo fila por fila exacto de la hoja Exactitud (sin sumar los centros de Chillán) el resultado va en la misma dirección: 38,7 % contra 37,1 %. Calculado de forma independiente y contrastado con el Comparador FCST x CD. S39: export QlikView de la semana 202639, cierre 202638 (FCST subido y Sugeridos vs Sistema de Antofagasta y La Serena) y archivo FCST_CD_REGIONES_SUGERIDOS_SEM39 del equipo CPFR; en Chillán y Osorno el Sistema es el FCST subido. CD normalizados como en el uploader (Temuco y Planta Chillán suman a Chillán).
+    Fuente: maestro FCSTxCD_S38-2026 (hojas BASE y FCST) y hojas Sugeridos vs Sistema de los Cierre x CD 202632 a 202637 (forecast de S33 a S38). FCST usado = hoja FCST del maestro, es decir el Cierre x CD que realmente se subió. Exactitud calculada igual que la tabla dinámica Exactitud: todos los SKU de los 4 CD, fila por fila de BASE, Exactitud = 1 − ΣError / ΣFCST, sin bajar de 0 %; la tabla del usado coincide celda por celda con la hoja del maestro. En los SKU que no están en Sugeridos vs Sistema, el Sistema y el Sugerido son iguales a lo que se subió. Volumen = FCST total de la hoja FCST contra Cantidad Solicitada total. Calculado de forma independiente y contrastado con el Comparador FCST x CD. S39: export QlikView de la semana 202639, cierre 202638 (FCST subido y Sugeridos vs Sistema de Antofagasta y La Serena) y archivo FCST_CD_REGIONES_SUGERIDOS_SEM39 del equipo CPFR; en Chillán y Osorno el Sistema es el FCST subido. CD normalizados como en el uploader (Temuco y Planta Chillán suman a Chillán).
   </footer>
 </div>
