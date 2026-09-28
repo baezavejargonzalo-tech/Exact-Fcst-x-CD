@@ -61,15 +61,18 @@
   th { text-align: right; font-weight: 600; font-size: 11.5px; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
   td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
   th:first-child, td:first-child { text-align: left; }
+  td:first-child { white-space: normal; }
+  table.fit th, table.fit td { padding-inline: 8px; }
   tr.tot td { font-weight: 800; border-top: 2px solid var(--ink); border-bottom: none; }
   td.pos { color: var(--good); font-weight: 700; }
   td.neg { color: var(--warn); font-weight: 700; }
-  td.bar { width: 34%; min-width: 150px; }
+  td.bar { width: 30%; min-width: 90px; }
   .bars { display: flex; flex-direction: column; gap: 3px; }
   .bars span { display: block; height: 7px; border-radius: 0 4px 4px 0; }
   .bars .a { background: var(--s1); } .bars .b { background: var(--s2); } .bars .c { background: var(--s3); }
   .chip.c { background: var(--s3-soft); color: var(--ink); } .chip.c i { background: var(--s3); }
-  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px; }
+  .stack { display: flex; flex-direction: column; gap: 20px; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 540px), 1fr)); gap: 20px; }
   ul.points { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.55; }
   ul.points b { font-weight: 700; }
   .warnbox { background: var(--warn-soft); color: var(--ink); border-radius: 12px; padding: 14px 16px; font-size: 13.5px; line-height: 1.55; }
@@ -97,7 +100,7 @@
     <div class="kpi">
       <div class="lbl">Exactitud (fórmula de la hoja Exactitud)</div>
       <div class="pair"><span class="v b">47,9 %</span><span class="vs">Sugerido</span><span class="v a">44,1 %</span><span class="vs">Sistema</span><span class="v c">48,0 %</span><span class="vs">Usado</span></div>
-      <span class="tag good">+3,8 puntos · gana 6 de 6 semanas y 4 de 4 CD</span>
+      <span class="tag good">+3,8 puntos · gana las 6 semanas (S33–S38) y los 4 CD</span>
     </div>
     <div class="kpi">
       <div class="lbl">Sesgo del volumen total</div>
@@ -116,7 +119,7 @@
     <h2>Mensaje para logística</h2>
     <ul class="points">
       <li><b>El Sugerido corrige el sesgo del Sistema.</b> El promedio automático pronostica 10 % menos de lo que se pide; el Sugerido queda a +2 % del volumen real.</li>
-      <li><b>Con la métrica que usamos todos los meses, el Sugerido gana siempre:</b> en las 6 semanas y en los 4 CD, con +3,8 puntos en total.</li>
+      <li><b>De la S33 a la S38, el Sugerido ganó en todas las semanas y en los 4 CD</b>, con +3,8 puntos en total, medido con la fórmula de nuestra hoja Exactitud (1 − Error / FCST). En la S39 no fue así: ganó en La Serena y perdió en Chillán (ver abajo).</li>
       <li><b>SKU a SKU el error es parecido.</b> El Sugerido acierta el volumen total pero todavía se equivoca en la mezcla de SKU; el siguiente paso es afinar los SKU de mayor volumen de Chillán.</li>
       <li><b>El FCST que se sube (usado) es el Sugerido</b> en el 99,6 % de las filas, así que estos resultados son los del forecast que realmente opera.</li>
       <li><b>En la S39, la semana después de Fiestas Patrias, el Sugerido se pasó en Chillán</b> (+37 % sobre lo pedido). No aplicarlo ahí fue la decisión correcta: en semanas post-feriado hay que ajustar las restricciones para no inflar el volumen.</li>
@@ -174,7 +177,7 @@
     <p class="sub" style="margin:0">Lo que se hizo fue la mejor opción en exactitud; usar el Sugerido en los 4 CD habría sido la peor. Sin el pedido atípico de Osorno el orden se mantiene: 42,9 % / 45,6 % / 44,3 %.</p>
   </section>
 
-  <div class="two">
+  <div class="stack">
     <section class="panel">
       <h2>S39 por CD: Sugerido CPFR, Sistema y usado</h2>
       <div class="tbl-wrap"><table>
@@ -191,9 +194,9 @@
       <p class="sub" style="margin:0">Antofagasta: el Sugerido pronosticó 69 % más de lo pedido. Osorno: los dos quedan en 0 % por un solo pedido atípico; sin él, ~46 % cada uno.</p>
     </section>
     <section class="panel">
-      <h2>Dónde se pasó el Sugerido en Chillán</h2>
-      <div class="tbl-wrap"><table>
-        <thead><tr><th>SKU</th><th>Sugerido</th><th>Subido</th><th>Pedido real</th></tr></thead>
+      <h2>S39: dónde se pasó el Sugerido en Chillán</h2>
+      <div class="tbl-wrap"><table class="fit">
+        <thead><tr><th>SKU</th><th>Sugerido</th><th>Subido</th><th>Real</th></tr></thead>
         <tbody>
           <tr><td>Leche Lonco Entera 12x1L</td><td>70,7 t</td><td>25,3 t</td><td>30,0 t</td></tr>
           <tr><td>Yogurt Griego Oikos 48x150g</td><td>37,4 t</td><td>10,9 t</td><td>13,4 t</td></tr>
