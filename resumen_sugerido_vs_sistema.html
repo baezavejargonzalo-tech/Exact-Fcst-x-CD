@@ -10,6 +10,7 @@
     --s1: #2a78d6; --s2: #eb6834; --s1-soft: #e6effb; --s2-soft: #fdebe3;
     --s3: #4a3aa7; --s3-soft: #ecebf8;
     --good: #16875a; --good-soft: #e3f6ed; --warn: #a8710a; --warn-soft: #fbf1e0;
+    --heat-lo: #f8696b; --heat-mid: #ffffff; --heat-hi: #63be7b; --pivot-head: #dde8f5;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -19,6 +20,7 @@
       --s1: #3987e5; --s2: #d95926; --s1-soft: #1b2b45; --s2-soft: #3a2218;
       --s3: #9085e9; --s3-soft: #26234a;
       --good: #4bc793; --good-soft: #163329; --warn: #e0af52; --warn-soft: #362a12;
+      --heat-lo: #7a2e33; --heat-mid: #171f30; --heat-hi: #1f6b45; --pivot-head: #223151;
     }
   }
   :root[data-theme="dark"] {
@@ -28,6 +30,7 @@
     --s1: #3987e5; --s2: #d95926; --s1-soft: #1b2b45; --s2-soft: #3a2218;
     --s3: #9085e9; --s3-soft: #26234a;
     --good: #4bc793; --good-soft: #163329; --warn: #e0af52; --warn-soft: #362a12;
+    --heat-lo: #7a2e33; --heat-mid: #171f30; --heat-hi: #1f6b45; --pivot-head: #223151;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Inter", ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
@@ -78,6 +81,20 @@
   .warnbox { background: var(--warn-soft); color: var(--ink); border-radius: 12px; padding: 14px 16px; font-size: 13.5px; line-height: 1.55; }
   .warnbox b { color: var(--warn); }
   footer { color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .pv-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pv-head .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .pv-head .sw.a { background: var(--s1); } .pv-head .sw.b { background: var(--s2); } .pv-head .sw.c { background: var(--s3); }
+  .pv-head .tot { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .pv-head .tot b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  table.pv { border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; min-width: 100%; }
+  table.pv th, table.pv td { padding: 6px 10px; border: 1px solid var(--grid); white-space: nowrap; }
+  table.pv thead th { background: var(--pivot-head); color: var(--ink); font-weight: 700; font-size: 12.5px; text-align: right; }
+  table.pv thead th.l { text-align: left; }
+  table.pv tbody th { text-align: left; font-weight: 600; font-size: 13px; color: var(--ink); background: var(--surface); }
+  table.pv td { text-align: right; }
+  table.pv tr.gt th, table.pv tr.gt td { font-weight: 800; border-top: 2px solid var(--ink); }
+  table.pv .tc { border-left: 2px solid var(--ink); font-weight: 800; }
+  .pvs { display: flex; flex-direction: column; gap: 18px; }
   .divider { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
   .divider span { font-family: "Manrope", sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
   .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
@@ -217,6 +234,56 @@
       <b>Leche Lonco Entera 12x1 tiene pedidos erráticos:</b> 96 t en Chillán en la S37, y en Osorno 37 t en la S38 y 65 t en la S39, cuando lo normal ahí son unas 2 t por semana. Ese solo pedido deja a Osorno en 0 % en la S39 para cualquier forecast. Conviene confirmar con logística si son traspasos o pedidos especiales.
     </div>
   </section>
+
+  <div class="divider"><span>Como lo vemos con logística · hoja Exactitud</span></div>
+
+  <section class="panel">
+    <h2>Tabla de Exactitud del maestro, para los tres forecasts (S33 a S38)</h2>
+    <p class="sub">Mismo formato y mismo cálculo que la hoja Exactitud: fila por fila de BASE, Exactitud = 1 − Error / FCST, Ago agrupado y las semanas de septiembre abiertas. Los tres forecasts se miden sobre los mismos SKU × CD, los que revisa el equipo CPFR. Rojo = peor, verde = mejor, misma escala en las tres tablas.</p>
+    <div class="pvs" id="pvs"></div>
+    <div class="warnbox">
+      <b>Por qué estos porcentajes son más bajos que los de arriba:</b> acá se calcula fila por fila exactamente como la hoja Exactitud. Hasta la S35, los dos centros de Chillán llevan cada uno el FCST completo, y eso baja todos los porcentajes. Arriba se suma la venta de ambos centros. Las conclusiones son las mismas: el Sugerido le gana al Sistema (39 % contra 37 %) y el usado es igual al Sugerido.<br><br>
+      <b>Si en el comparador se eligen todos los SKU de los 4 CD</b>, el usado sale con 37 % y el Sugerido con 34 % (el Sistema, 31 %). Esa diferencia no es mejor pronóstico: en los SKU que el equipo CPFR no revisa, el usado tiene forecast y el Sugerido y el Sistema cuentan como 0.
+    </div>
+  </section>
+
+  <script>
+  (function () {
+    var cols = [["Ago", ""], ["Sep", "202636"], ["Sep", "202637"], ["Sep", "202638"]];
+    var cds = ["CD ANTOFAGASTA", "CD CHILLAN", "CD LA SERENA", "CD OSORNO", "Total general"];
+    // exactitud en % por CD: Ago, 202636, 202637, 202638, Total general (comparador, SKU × CD de Sugeridos vs Sistema)
+    var data = [
+      { name: "FCST Sistema", cls: "a", rows: [[41, 36, 44, 41, 41], [33, 57, 32, 49, 37], [37, 33, 46, 35, 38], [40, 38, 38, 0, 35], [35, 49, 36, 41, 37]] },
+      { name: "Sugerido CPFR", cls: "b", rows: [[45, 36, 53, 59, 47], [33, 53, 32, 48, 37], [48, 44, 56, 52, 49], [42, 34, 40, 4, 35], [36, 48, 38, 45, 39]] },
+      { name: "FCST usado", cls: "c", rows: [[45, 36, 53, 59, 47], [33, 53, 32, 48, 37], [48, 44, 56, 52, 49], [42, 34, 41, 5, 36], [36, 48, 38, 45, 39]] }
+    ];
+    function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+    function rgb(h) { h = h.replace("#", ""); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
+    function mix(a, b, t) { a = rgb(a); b = rgb(b); return "rgb(" + a.map(function (v, i) { return Math.round(v + (b[i] - v) * t); }).join(",") + ")"; }
+    function render() {
+      var all = [];
+      data.forEach(function (d) { d.rows.forEach(function (r) { all = all.concat(r); }); });
+      all.sort(function (x, y) { return x - y; });
+      var mn = all[0], mx = all[all.length - 1], md = all[Math.floor((all.length - 1) / 2)];
+      var lo = css("--heat-lo"), mid = css("--heat-mid"), hi = css("--heat-hi");
+      function col(v) { return v <= md ? mix(lo, mid, md === mn ? 1 : (v - mn) / (md - mn)) : mix(mid, hi, mx === md ? 0 : (v - md) / (mx - md)); }
+      document.getElementById("pvs").innerHTML = data.map(function (d) {
+        var head = '<thead><tr><th class="l">Suma de Exactitud</th><th class="l">Ago</th><th class="l" colspan="3">Sep</th><th class="tc" rowspan="2">Total general</th></tr>' +
+          '<tr><th class="l">Centro de Distribución</th>' + cols.map(function (c) { return "<th>" + c[1] + "</th>"; }).join("") + "</tr></thead>";
+        var body = d.rows.map(function (r, i) {
+          return '<tr' + (i === 4 ? ' class="gt"' : "") + "><th>" + cds[i] + "</th>" + r.map(function (v, j) {
+            return '<td' + (j === 4 ? ' class="tc"' : "") + ' style="background:' + col(v) + '">' + v + "%</td>";
+          }).join("") + "</tr>";
+        }).join("");
+        return '<div><div class="pv-head"><span class="sw ' + d.cls + '"></span><h2>Exactitud · ' + d.name + '</h2><span class="tot">Total general <b>' + d.rows[4][4] + '%</b></span></div>' +
+          '<div class="tbl-wrap" style="margin-top:8px"><table class="pv">' + head + "<tbody>" + body + "</tbody></table></div></div>";
+      }).join("");
+    }
+    render();
+    try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render); } catch (e) {}
+    try { new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] }); } catch (e) {}
+  })();
+  </script>
 
   <footer>
     Fuente: maestro FCSTxCD_S38-2026 (hoja BASE, Cantidad Solicitada) y hojas Sugeridos vs Sistema de los Cierre x CD 202632 a 202637 (forecast de S33 a S38). FCST usado = hoja FCST del maestro, es decir el Cierre x CD que realmente se subió. Se comparan los SKU × CD que el equipo CPFR revisó (93 % de la venta de los 4 CD), los mismos para los tres forecasts. Error medido por CD × SKU × semana; la venta de los dos centros de Chillán (D106 y D009) se suma. Exactitud = 1 − ΣError / ΣFCST, sin bajar de 0 %. Con el cálculo fila por fila exacto de la hoja Exactitud (sin sumar los centros de Chillán) el resultado va en la misma dirección: 38,7 % contra 37,1 %. Calculado de forma independiente y contrastado con el Comparador FCST x CD. S39: export QlikView de la semana 202639, cierre 202638 (FCST subido y Sugeridos vs Sistema de Antofagasta y La Serena) y archivo FCST_CD_REGIONES_SUGERIDOS_SEM39 del equipo CPFR; en Chillán y Osorno el Sistema es el FCST subido. CD normalizados como en el uploader (Temuco y Planta Chillán suman a Chillán).
