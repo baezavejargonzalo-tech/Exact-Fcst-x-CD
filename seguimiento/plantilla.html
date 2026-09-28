@@ -10,6 +10,7 @@
     --accent: #2b5fe0; --accent-soft: #e7edfd; --accent-2: #9db6f2;
     --good: #16875a; --good-soft: #e3f6ed; --warn: #9a6608; --warn-soft: #fbf1e0;
     --crit: #c23b3b; --crit-soft: #fbe9e9; --focus: #2b5fe0;
+    --heat-lo: #f8696b; --heat-mid: #fff3c4; --heat-hi: #63be7b;
     --f-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
     --f-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   }
@@ -21,6 +22,7 @@
       --accent: #5b86f5; --accent-soft: #202c4c; --accent-2: #34508f;
       --good: #4bc793; --good-soft: #163329; --warn: #e0af52; --warn-soft: #362a12;
       --crit: #e2685f; --crit-soft: #34201f; --focus: #5b86f5;
+      --heat-lo: #8a3236; --heat-mid: #5a4c1c; --heat-hi: #1f7048;
     }
   }
   :root[data-theme="dark"] {
@@ -30,6 +32,7 @@
     --accent: #5b86f5; --accent-soft: #202c4c; --accent-2: #34508f;
     --good: #4bc793; --good-soft: #163329; --warn: #e0af52; --warn-soft: #362a12;
     --crit: #e2685f; --crit-soft: #34201f; --focus: #5b86f5;
+    --heat-lo: #8a3236; --heat-mid: #5a4c1c; --heat-hi: #1f7048;
   }
   * { box-sizing: border-box; }
   body {
@@ -112,16 +115,108 @@
   .hist .lab { fill: var(--ink); font-size: 11.5px; font-weight: 700; font-family: var(--f-body); }
   .empty { color: var(--muted); font-size: 13px; background: var(--surface-2); border-radius: 10px; padding: 14px; }
   footer { color: var(--muted); font-size: 12px; line-height: 1.6; text-align: center; }
+
+  .tabs { display: flex; gap: 4px; margin-top: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tabs button { font: 700 14px var(--f-display); color: var(--muted); background: none; border: none; padding: 10px 14px; border-bottom: 3px solid transparent; margin-bottom: -1px; cursor: pointer; }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .tabs button:focus-visible, .ghost:focus-visible, .seg button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .view { display: flex; flex-direction: column; gap: 20px; }
+  [hidden] { display: none !important; }
+  .filters { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 3; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 140px; min-width: 0; max-width: 220px; }
+  .field.grow { flex: 2 1 220px; max-width: 320px; }
+  .field label { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+  .field select, .field input { font: 500 13.5px var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; width: 100%; }
+  .field select:focus-visible, .field input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .field select.on { border-color: var(--accent); background: var(--accent-soft); }
+  .ghost { font: 600 13px var(--f-body); color: var(--accent); background: none; border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; cursor: pointer; align-self: flex-end; }
+  .ghost:hover { background: var(--accent-soft); }
+  .row-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button { font: 600 12.5px var(--f-body); background: var(--surface); color: var(--muted); border: none; padding: 6px 12px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .note.warn { color: var(--ink); }
+  .bar-track.x { cursor: pointer; }
+  .bar-track .xb { position: absolute; left: 0; top: 3px; height: 16px; border-radius: 0 4px 4px 0; background: var(--accent); }
+  .bar-track .xbg { position: absolute; left: 0; right: 0; top: 7px; height: 8px; background: var(--grid); border-radius: 4px; }
+  .bar-row.dim { opacity: .4; }
+  .bar-sub { color: var(--muted); font-weight: 500; font-size: 11.5px; display: block; }
+  .bar-row.x { grid-template-columns: minmax(96px, 190px) minmax(0, 1fr) 130px; }
+  @media (max-width: 520px) { .bar-row.x { grid-template-columns: 88px minmax(0, 1fr) 72px; } }
+  .scale { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
+  .scale .ramp { width: 140px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--heat-lo), var(--heat-mid), var(--heat-hi)); border: 1px solid var(--border); }
+  table.heat td, table.heat th { border: 1px solid var(--grid); text-align: center; padding: 7px 8px; }
+  table.heat thead th { background: var(--surface-2); color: var(--ink); white-space: normal; min-width: 76px; font-size: 11px; }
+  table.heat tbody th { text-align: left; font-weight: 600; color: var(--ink); font-size: 12.5px; background: var(--surface); }
+  table.heat td { font-weight: 700; cursor: pointer; }
+  table.heat td.na { color: var(--muted); background: var(--surface-2); cursor: default; font-weight: 400; }
+  table.heat td.sel { outline: 2px solid var(--ink); outline-offset: -2px; }
+  th.sort { cursor: pointer; user-select: none; }
+  th.sort:hover { color: var(--ink); }
+  th.sort[aria-sort="ascending"]::after { content: " ▲"; font-size: 9px; }
+  th.sort[aria-sort="descending"]::after { content: " ▼"; font-size: 9px; }
+  .ex { display: inline-flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .ex i { display: inline-block; width: 44px; height: 6px; border-radius: 3px; background: var(--grid); position: relative; overflow: hidden; }
+  .ex i b { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); }
+  .sesgo-alto { color: var(--warn); font-weight: 600; } .sesgo-bajo { color: var(--crit); font-weight: 600; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
 <div class="wrap">
   <header>
     <p class="eyebrow">Lácteos y Jugos · Seguimiento semanal</p>
-    <h1 id="titulo">Avance vs FCST</h1>
-    <p class="lede" id="lede"></p>
+    <h1>FCST por cadena</h1>
+    <nav class="tabs" role="tablist" aria-label="Vistas">
+      <button role="tab" id="tabExact" aria-controls="vExact" aria-selected="true">Exactitud</button>
+      <button role="tab" id="tabAvance" aria-controls="vAvance" aria-selected="false">Avance semana en curso</button>
+    </nav>
   </header>
 
+  <div class="view" id="vExact" role="tabpanel" aria-labelledby="tabExact">
+    <section class="filters" aria-label="Filtros">
+      <div class="field"><label for="xSem">Semana</label><select id="xSem"></select></div>
+      <div class="field"><label for="xMed">Real</label>
+        <select id="xMed"><option value="sellin">Sell In</option><option value="real">Venta Real</option><option value="solic">Solicitado</option></select></div>
+      <div class="field"><label for="xCad">Cadena</label><select id="xCad"></select></div>
+      <div class="field"><label for="xCat">Categoría</label><select id="xCat"></select></div>
+      <div class="field"><label for="xMarca">Marca</label><select id="xMarca"></select></div>
+      <div class="field"><label for="xFoco">Foco</label><select id="xFoco"></select></div>
+      <div class="field grow"><label for="xFind">Buscar SKU o producto</label><input type="search" id="xFind" placeholder="Ej. 30000522 o LONCO BASE" autocomplete="off"></div>
+      <button class="ghost" id="xReset" type="button">Limpiar filtros</button>
+    </section>
+    <div class="note warn" id="xAviso" hidden></div>
+
+    <section class="kpis" id="xKpis" aria-label="Resumen de exactitud"></section>
+
+    <section class="panel" aria-labelledby="hXBars">
+      <h2 id="hXBars">Exactitud por cadena</h2>
+      <p class="sub">Exactitud ponderada por el peso de cada SKU en el FCST. El texto de la derecha es Sell In / FCST: sobre 100 % se vendió más de lo proyectado. Toca una cadena para filtrar.</p>
+      <div class="bars" id="xBars"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="hXHeat">
+      <h2 id="hXHeat">Cadena × categoría</h2>
+      <p class="sub">Exactitud ponderada de cada cruce. Rojo es baja y verde es alta. Toca una celda para filtrar la tabla de SKU.</p>
+      <div class="scale"><span>0 %</span><span class="ramp"></span><span>100 %</span></div>
+      <div class="tbl-wrap"><table class="heat" id="xHeat"></table></div>
+    </section>
+
+    <section class="panel" aria-labelledby="hXSku">
+      <div class="row-head">
+        <h2 id="hXSku">Exactitud por SKU</h2>
+        <div class="seg" role="group" aria-label="Nivel de detalle">
+          <button type="button" id="xLvlCad" aria-pressed="true">SKU × cadena</button>
+          <button type="button" id="xLvlSku" aria-pressed="false">SKU total</button>
+        </div>
+      </div>
+      <p class="sub" id="xSkuSub"></p>
+      <div class="tbl-wrap"><table id="xTbl"></table></div>
+      <button class="ghost" id="xMore" type="button" hidden>Ver más</button>
+    </section>
+  </div>
+
+  <div class="view" id="vAvance" role="tabpanel" aria-labelledby="tabAvance" hidden>
+  <p class="lede" id="lede"></p>
   <section class="kpis" id="kpis" aria-label="Resumen de la semana"></section>
 
   <section class="panel" aria-labelledby="hBars">
@@ -146,13 +241,15 @@
   </section>
 
   <footer id="pie"></footer>
+  </div>
+  <footer id="xPie"></footer>
 </div>
 <div class="tip" id="tip" hidden></div>
 
 <script>
 (function () {
   "use strict";
-  var D = /*__DATOS__*/null;
+  var D = window.__D = /*__DATOS__*/null;
   var nf1 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   var nf0 = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
   function t(n) { return Math.abs(n) >= 100 ? nf0.format(n) : nf1.format(n); }
@@ -173,7 +270,7 @@
     return { k: "ok", l: "En curso" };
   }
 
-  $("titulo").textContent = "Avance S" + D.semana + " vs FCST";
+  $("tabAvance").textContent = "Avance S" + D.semana;
   $("lede").textContent = "Corte del " + fechaLarga(D.fecha) + ". Toneladas solicitadas en la semana " + D.anio + D.semana + " contra el FCST S" + D.semana + " que cargaste, solo SKU del Grupo Lácteos y Jugos.";
 
   // ---------- KPIs ----------
@@ -279,5 +376,208 @@
   }
 
   $("pie").innerHTML = "Solicitado, venta real y quebrado vienen del export de la base (semana " + D.anio + D.semana + "). El FCST es la columna S" + D.semana + " de la hoja FCST, sumada por cadena y SKU (Cencosud = Jumbo + Santa Isabel).<br>Hay " + skus.filter(function (s) { return s.FCST === 0 && s.Solicitado > 0; }).length + " SKU con pedidos que no tienen FCST en el archivo; suman " + t(skus.filter(function (s) { return s.FCST === 0; }).reduce(function (a, s) { return a + s.Solicitado; }, 0)) + " t.";
+})();
+
+// ================= Exactitud =================
+(function () {
+  "use strict";
+  var D = window.__D, X = D.exact;
+  var $ = function (id) { return document.getElementById(id); };
+  var nf1 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var nf0 = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
+  function t(n) { return Math.abs(n) >= 100 ? nf0.format(n) : nf1.format(n); }
+  function p(x) { return x === null || !isFinite(x) ? "–" : nf0.format(Math.round(x * 100)) + " %"; }
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function nombre(c) { if (c.length <= 4) return c; return c.toLowerCase().replace(/(^|\s)\S/g, function (m) { return m.toUpperCase(); }).replace(/\bY\b/g, "y"); }
+  function cap(s) { return s ? s.charAt(0) + s.slice(1).toLowerCase() : s; }
+  var MED = { sellin: "Sell In", real: "Venta Real", solic: "Solicitado" };
+
+  // ---------- pestañas ----------
+  function show(which) {
+    ["Exact", "Avance"].forEach(function (k) {
+      var on = k === which;
+      $("tab" + k).setAttribute("aria-selected", on);
+      $("v" + k).hidden = !on;
+    });
+    $("xPie").hidden = which !== "Exact";
+  }
+  $("tabExact").onclick = function () { show("Exact"); };
+  $("tabAvance").onclick = function () { show("Avance"); };
+  if (location.hash === "#avance") show("Avance");
+
+  // ---------- datos ----------
+  var rows = X.filas.map(function (r) {
+    var s = X.skus[r[2]] || {};
+    return { sem: r[0], cad: r[1], sku: r[2], f: r[3], sellin: r[4], real: r[5], solic: r[6], queb: r[7],
+      n: s.n || "", cat: s.cat || "Sin categoría", marca: s.marca || "Sin marca", foco: s.foco || "Sin foco" };
+  });
+  var semInfo = {}; X.semanas.forEach(function (s) { semInfo[s.sem] = s; });
+
+  function opts(id, vals, all) {
+    $(id).innerHTML = (all ? '<option value="">' + all + "</option>" : "") + vals.map(function (v) { return '<option value="' + esc(v[0]) + '">' + esc(v[1]) + "</option>"; }).join("");
+  }
+  function uniq(k) { var s = {}; rows.forEach(function (r) { s[r[k]] = 1; }); return Object.keys(s).sort(); }
+  var ultimaCerrada = X.semanas.filter(function (s) { return s.sellin > 0; }).map(function (s) { return s.sem; }).pop();
+  opts("xSem", X.semanas.map(function (s) { return [s.sem, "S" + s.sem + (s.sellin > 0 ? " · cerrada" : " · en curso")]; }).reverse());
+  opts("xCad", uniq("cad").map(function (v) { return [v, nombre(v)]; }), "Todas");
+  opts("xCat", uniq("cat").map(function (v) { return [v, cap(v)]; }), "Todas");
+  opts("xMarca", uniq("marca").map(function (v) { return [v, v]; }), "Todas");
+  opts("xFoco", uniq("foco").map(function (v) { return [v, cap(v)]; }), "Todos");
+  $("xSem").value = ultimaCerrada || X.semanas[X.semanas.length - 1].sem;
+
+  var st = { lvl: "cad", sort: "err", dir: -1, lim: 50 };
+
+  // exactitud de un SKU (o SKU×cadena): 1 - |real - fcst| / fcst, entre 0 y 1. Sin FCST no pondera.
+  function agg(list, m) {
+    var a = { f: 0, r: 0, e: 0, q: 0, n: 0, sinF: 0 };
+    list.forEach(function (x) {
+      var r = x[m];
+      a.f += x.f; a.r += r; a.q += x.queb; a.n++;
+      if (x.f > 0) a.e += Math.min(Math.abs(r - x.f), x.f); else a.sinF += r;
+    });
+    a.ex = a.f > 0 ? 1 - a.e / a.f : null;
+    a.ratio = a.f > 0 ? a.r / a.f : null;
+    return a;
+  }
+  function groupBy(list, keyFn) { var g = new Map(); list.forEach(function (x) { var k = keyFn(x); if (!g.has(k)) g.set(k, []); g.get(k).push(x); }); return g; }
+
+  function filtered(skip) {
+    var sem = +$("xSem").value, cad = $("xCad").value, cat = $("xCat").value, marca = $("xMarca").value, foco = $("xFoco").value;
+    var q = $("xFind").value.trim().toUpperCase();
+    return rows.filter(function (r) {
+      return r.sem === sem && (skip === "cad" || !cad || r.cad === cad) && (skip === "cat" || !cat || r.cat === cat) &&
+        (!marca || r.marca === marca) && (!foco || r.foco === foco) &&
+        (!q || String(r.sku).indexOf(q) >= 0 || r.n.toUpperCase().indexOf(q) >= 0);
+    });
+  }
+
+  function heatColor(v) {
+    if (v === null) return "";
+    var a = v < 0.5 ? "var(--heat-lo)" : "var(--heat-hi)", k = v < 0.5 ? (0.5 - v) / 0.5 : (v - 0.5) / 0.5;
+    return "background: color-mix(in oklab, " + a + " " + Math.round(k * 100) + "%, var(--heat-mid))";
+  }
+
+  function render() {
+    var m = $("xMed").value, sem = +$("xSem").value, info = semInfo[sem];
+    ["xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).classList.toggle("on", !!$(id).value); });
+    var aviso = $("xAviso");
+    if (m === "sellin" && info && !(info.sellin > 0)) {
+      aviso.hidden = false;
+      aviso.innerHTML = "<b>La S" + sem + " todavía no tiene Sell In.</b> La base trae Sell In en 0 para esta semana, así que la exactitud saldría 0 %. Cambia a Venta Real o Solicitado para ver cómo va, sabiendo que la semana no está cerrada.";
+    } else if (info && !(info.sellin > 0)) {
+      aviso.hidden = false;
+      aviso.innerHTML = "<b>S" + sem + " está en curso.</b> La exactitud contra " + MED[m] + " es parcial y va a subir a medida que entren los pedidos de la semana.";
+    } else aviso.hidden = true;
+
+    var L = filtered();
+    var A = agg(L, m);
+    $("xKpis").innerHTML =
+      kpi(p(A.ex), "Exactitud ponderada S" + sem, '<div class="meter"><i style="width:' + Math.max(0, Math.min(100, (A.ex || 0) * 100)) + '%"></i></div>') +
+      kpi(p(A.ratio), MED[m] + " / FCST", '<span class="x">' + (A.ratio > 1 ? "Se vendió más de lo proyectado" : A.ratio < 1 ? "Se vendió menos de lo proyectado" : "") + "</span>") +
+      kpi(t(A.f) + " t", "FCST", '<span class="x" style="color:var(--muted)">' + t(A.r) + " t de " + MED[m] + "</span>") +
+      kpi(t(A.e) + " t", "Error absoluto", '<span class="x" style="color:var(--muted)">' + t(A.sinF) + " t vendidas sin FCST</span>");
+    function kpi(v, k, x) { return '<div class="kpi"><div class="v">' + v + '</div><div class="k">' + k + "</div>" + x + "</div>"; }
+
+    // barras por cadena (ignoran el filtro de cadena para poder comparar)
+    var cadSel = $("xCad").value;
+    var byCad = Array.from(groupBy(filtered("cad"), function (r) { return r.cad; })).map(function (e) { var a = agg(e[1], m); a.k = e[0]; return a; })
+      .filter(function (a) { return a.f > 0; }).sort(function (a, b) { return b.f - a.f; });
+    $("xBars").innerHTML = byCad.map(function (a) {
+      return '<div class="bar-row x' + (cadSel && cadSel !== a.k ? " dim" : "") + '"><div class="bar-name">' + esc(nombre(a.k)) + '<span class="bar-sub">FCST ' + t(a.f) + " t</span></div>" +
+        '<div class="bar-track x" data-k="' + esc(a.k) + '" role="button" tabindex="0" aria-label="Filtrar ' + esc(nombre(a.k)) + '"><span class="xbg"></span><span class="xb" style="width:' + (a.ex || 0) * 100 + '%"></span></div>' +
+        '<div class="bar-pct">' + p(a.ex) + '<span class="bar-sub">' + MED[m] + "/FCST " + p(a.ratio) + "</span></div></div>";
+    }).join("") || '<div class="empty">No hay cadenas con FCST para estos filtros.</div>';
+    barData = byCad;
+
+    // heatmap cadena x categoría
+    var HL = filtered("cat");
+    var cads = byCad.map(function (a) { return a.k; }).filter(function (k) { return !cadSel || k === cadSel; });
+    var cats = Array.from(groupBy(HL, function (r) { return r.cat; })).map(function (e) { return [e[0], agg(e[1], m)]; })
+      .filter(function (e) { return e[1].f > 0; }).sort(function (a, b) { return b[1].f - a[1].f; });
+    var cell = groupBy(HL, function (r) { return r.cad + "|" + r.cat; });
+    var catSel = $("xCat").value;
+    var h = '<thead><tr><th></th>' + cats.map(function (c) { return "<th>" + esc(cap(c[0])) + "</th>"; }).join("") + "<th>Total</th></tr></thead><tbody>";
+    cads.forEach(function (cd) {
+      h += "<tr><th>" + esc(nombre(cd)) + "</th>";
+      cats.forEach(function (c) {
+        var l = cell.get(cd + "|" + c[0]), a = l ? agg(l, m) : null;
+        if (!a || !(a.f > 0)) h += '<td class="na">–</td>';
+        else h += '<td style="' + heatColor(a.ex) + '" class="' + (catSel === c[0] ? "sel" : "") + '" data-cad="' + esc(cd) + '" data-cat="' + esc(c[0]) + '" data-tip="' + esc(nombre(cd) + " · " + cap(c[0]) + "|" + p(a.ex) + "|" + t(a.f) + "|" + t(a.r) + "|" + t(a.e)) + '">' + p(a.ex) + "</td>";
+      });
+      var tot = agg(HL.filter(function (r) { return r.cad === cd; }), m);
+      h += '<td style="' + heatColor(tot.ex) + '" data-cad="' + esc(cd) + '" data-cat="">' + p(tot.ex) + "</td></tr>";
+    });
+    h += '<tr><th>Total</th>' + cats.map(function (c) { return '<td style="' + heatColor(c[1].ex) + '" data-cad="" data-cat="' + esc(c[0]) + '">' + p(c[1].ex) + "</td>"; }).join("") +
+      '<td style="' + heatColor(agg(HL.filter(function (r) { return cads.indexOf(r.cad) >= 0; }), m).ex) + '" data-cad="" data-cat="">' + p(agg(HL.filter(function (r) { return cads.indexOf(r.cad) >= 0; }), m).ex) + "</td></tr></tbody>";
+    $("xHeat").innerHTML = cats.length ? h : '<tbody><tr><td class="na">No hay datos para estos filtros.</td></tr></tbody>';
+
+    // tabla de SKU
+    var items;
+    if (st.lvl === "cad") items = L.map(function (r) { var a = agg([r], m); a.cad = r.cad; a.sku = r.sku; a.nm = r.n; a.cat = r.cat; return a; });
+    else items = Array.from(groupBy(L, function (r) { return r.sku; })).map(function (e) { var a = agg(e[1], m); a.cad = e[1].length + " cadenas"; a.sku = e[0]; a.nm = e[1][0].n; a.cat = e[1][0].cat; return a; });
+    items.forEach(function (a) { a.peso = A.f > 0 ? a.f / A.f : 0; a.aporte = A.f > 0 ? a.e / A.f : 0; });
+    var key = { err: "e", ex: "ex", f: "f", r: "r", ratio: "ratio", peso: "peso", sku: "sku", cad: "cad", nm: "nm" }[st.sort];
+    items.sort(function (a, b) {
+      var x = a[key], y = b[key];
+      if (x === null) return 1; if (y === null) return -1;
+      return (typeof x === "string" ? x.localeCompare(y) : x - y) * st.dir;
+    });
+    $("xSkuSub").textContent = items.length + " filas. Ordenadas por " + ({ err: "error absoluto", ex: "exactitud", f: "FCST", r: MED[m], ratio: MED[m] + " / FCST", peso: "peso", sku: "SKU", cad: "cadena", nm: "producto" }[st.sort]) +
+      ". “Resta” son los puntos de exactitud que ese SKU le quita al total filtrado. Toca un encabezado para ordenar.";
+    var cols = [["cad", "Cadena", "l"], ["sku", "SKU", "l"], ["nm", "Producto", "l"], ["f", "FCST (t)"], ["r", MED[m] + " (t)"], ["ratio", MED[m] + "/FCST"], ["ex", "Exactitud"], ["peso", "Peso"], ["err", "Resta"]];
+    if (st.lvl === "sku") cols[0] = ["cad", "Cadenas", "l"];
+    var th = "<thead><tr>" + cols.map(function (c) { return '<th class="sort ' + (c[2] || "") + '" data-s="' + c[0] + '"' + (st.sort === c[0] ? ' aria-sort="' + (st.dir > 0 ? "ascending" : "descending") + '"' : "") + ">" + esc(c[1]) + "</th>"; }).join("") + "</tr></thead>";
+    var tb = items.slice(0, st.lim).map(function (a) {
+      var rc = a.ratio === null ? "" : a.ratio > 1.2 ? "sesgo-alto" : a.ratio < 0.8 ? "sesgo-bajo" : "";
+      return "<tr><td class=\"l\">" + esc(st.lvl === "cad" ? nombre(a.cad) : a.cad) + '</td><td class="l">' + a.sku + '</td><td class="l" style="white-space:normal;min-width:200px">' + esc(a.nm) + "</td><td>" + t(a.f) + "</td><td>" + t(a.r) +
+        '</td><td class="' + rc + '">' + (a.f > 0 ? p(a.ratio) : "sin FCST") + '</td><td><span class="ex">' + p(a.ex) + '<i><b style="width:' + ((a.ex || 0) * 100) + '%"></b></i></span></td><td>' + p(a.peso).replace(" %", "") + (a.peso ? " %" : "") +
+        "</td><td>" + (a.aporte > 0 ? "−" + nf1.format(a.aporte * 100) + " pts" : "–") + "</td></tr>";
+    }).join("");
+    $("xTbl").innerHTML = th + "<tbody>" + tb + "</tbody>";
+    $("xMore").hidden = items.length <= st.lim;
+    $("xMore").textContent = "Ver " + Math.min(50, items.length - st.lim) + " más de " + (items.length - st.lim);
+  }
+  var barData = [];
+
+  ["xSem", "xMed", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).addEventListener("change", function () { st.lim = 50; render(); }); });
+  $("xFind").addEventListener("input", function () { st.lim = 50; render(); });
+  $("xReset").onclick = function () { ["xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).value = ""; }); $("xFind").value = ""; st.lim = 50; render(); };
+  $("xMore").onclick = function () { st.lim += 50; render(); };
+  $("xLvlCad").onclick = function () { st.lvl = "cad"; $("xLvlCad").setAttribute("aria-pressed", true); $("xLvlSku").setAttribute("aria-pressed", false); render(); };
+  $("xLvlSku").onclick = function () { st.lvl = "sku"; $("xLvlSku").setAttribute("aria-pressed", true); $("xLvlCad").setAttribute("aria-pressed", false); render(); };
+  $("xTbl").addEventListener("click", function (e) {
+    var h = e.target.closest("th.sort"); if (!h) return;
+    var s = h.dataset.s;
+    if (st.sort === s) st.dir = -st.dir; else { st.sort = s; st.dir = ["sku", "cad", "nm"].indexOf(s) >= 0 ? 1 : -1; }
+    render();
+  });
+  function pickCad(k) { $("xCad").value = $("xCad").value === k ? "" : k; st.lim = 50; render(); }
+  $("xBars").addEventListener("click", function (e) { var b = e.target.closest(".bar-track.x"); if (b) pickCad(b.dataset.k); });
+  $("xBars").addEventListener("keydown", function (e) { var b = e.target.closest(".bar-track.x"); if (b && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pickCad(b.dataset.k); } });
+  $("xHeat").addEventListener("click", function (e) {
+    var c = e.target.closest("td[data-cad]"); if (!c) return;
+    $("xCad").value = c.dataset.cad; $("xCat").value = c.dataset.cat; st.lim = 50; render();
+    $("hXSku").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  var tip = $("tip");
+  function place(e) { tip.hidden = false; tip.style.left = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8) + "px"; tip.style.top = (e.clientY + 14) + "px"; }
+  function row(k, v) { return '<div class="r"><span>' + k + "</span><b>" + v + "</b></div>"; }
+  $("xHeat").addEventListener("mousemove", function (e) {
+    var c = e.target.closest("td[data-tip]"); if (!c) { tip.hidden = true; return; }
+    var v = c.dataset.tip.split("|"), m = MED[$("xMed").value];
+    tip.innerHTML = '<div class="h">' + esc(v[0]) + "</div>" + row("Exactitud", v[1]) + row("FCST", v[2] + " t") + row(m, v[3] + " t") + row("Error", v[4] + " t");
+    place(e);
+  });
+  $("xBars").addEventListener("mousemove", function (e) {
+    var b = e.target.closest(".bar-track.x"); if (!b) { tip.hidden = true; return; }
+    var a = barData.filter(function (x) { return x.k === b.dataset.k; })[0], m = MED[$("xMed").value];
+    tip.innerHTML = '<div class="h">' + esc(nombre(a.k)) + "</div>" + row("Exactitud", p(a.ex)) + row("FCST", t(a.f) + " t") + row(m, t(a.r) + " t") + row(m + " / FCST", p(a.ratio)) + row("Error absoluto", t(a.e) + " t");
+    place(e);
+  });
+  ["xHeat", "xBars"].forEach(function (id) { $(id).addEventListener("mouseleave", function () { tip.hidden = true; }); });
+
+  $("xPie").innerHTML = "Exactitud por SKU = 1 − |Real − FCST| / FCST, entre 0 % y 100 %, calculada en cada cruce cadena × SKU. El total de una cadena o categoría es el promedio ponderado por el peso de cada SKU en el FCST (equivale a 1 − Σ error / Σ FCST). Los SKU vendidos sin FCST no ponderan; se informan aparte.<br>FCST: columnas S" + X.semanas.map(function (s) { return s.sem; }).join(" y S") + " de la hoja FCST. Real: export de la base, solo Grupo Lácteos y Jugos.";
+  render();
 })();
 </script>

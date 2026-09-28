@@ -11,3 +11,11 @@ python seguimiento/avance_semana.py --fcst <FCST_Lacteos_y_Jugos.xlsx> --base <b
 - `dashboard/Avance_FCST.html`: dashboard con la evolución de todos los cortes de la semana.
 
 Avance = Solicitado / FCST de la semana. Solo SKU del Grupo Lácteos y Jugos.
+
+## Exactitud
+
+Pestaña "Exactitud" del dashboard y hojas "Exactitud cadena" / "Exactitud SKU" del Excel.
+
+- Por cadena × SKU: `1 − min(|Real − FCST|, FCST) / FCST` (entre 0 y 100 %).
+- Totales (cadena, categoría, total): ponderados por el peso del SKU en el FCST, equivale a `1 − Σ error / Σ FCST`.
+- Real = Sell In. Si la semana todavía no tiene Sell In (semana en curso), el Excel usa Venta Real y el dashboard avisa.
