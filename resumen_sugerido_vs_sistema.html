@@ -8,6 +8,7 @@
     --bg: #eef2f8; --surface: #ffffff; --surface-2: #f6f8fc; --ink: #182339; --muted: #626e88;
     --border: #d8e0ee; --grid: #e6ebf4; --accent: #2b5fe0;
     --s1: #2a78d6; --s2: #eb6834; --s1-soft: #e6effb; --s2-soft: #fdebe3;
+    --s3: #4a3aa7; --s3-soft: #ecebf8;
     --good: #16875a; --good-soft: #e3f6ed; --warn: #a8710a; --warn-soft: #fbf1e0;
   }
   @media (prefers-color-scheme: dark) {
@@ -16,6 +17,7 @@
       --bg: #0e1420; --surface: #171f30; --surface-2: #1d2638; --ink: #e8ecf7; --muted: #93a0bd;
       --border: #2a3450; --grid: #232d44; --accent: #5b86f5;
       --s1: #3987e5; --s2: #d95926; --s1-soft: #1b2b45; --s2-soft: #3a2218;
+      --s3: #9085e9; --s3-soft: #26234a;
       --good: #4bc793; --good-soft: #163329; --warn: #e0af52; --warn-soft: #362a12;
     }
   }
@@ -24,6 +26,7 @@
     --bg: #0e1420; --surface: #171f30; --surface-2: #1d2638; --ink: #e8ecf7; --muted: #93a0bd;
     --border: #2a3450; --grid: #232d44; --accent: #5b86f5;
     --s1: #3987e5; --s2: #d95926; --s1-soft: #1b2b45; --s2-soft: #3a2218;
+    --s3: #9085e9; --s3-soft: #26234a;
     --good: #4bc793; --good-soft: #163329; --warn: #e0af52; --warn-soft: #362a12;
   }
   * { box-sizing: border-box; }
@@ -43,6 +46,7 @@
   .kpi .v { font-family: "Manrope", sans-serif; font-weight: 800; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
   .kpi .v.b { color: var(--s2); }
   .kpi .v.a { color: var(--s1); }
+  .kpi .v.c { color: var(--s3); font-size: 22px; }
   .kpi .vs { color: var(--muted); font-size: 13px; }
   .kpi .note { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
   .tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; width: fit-content; }
@@ -51,7 +55,7 @@
   .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-  .legend i.a { background: var(--s1); } .legend i.b { background: var(--s2); }
+  .legend i.a { background: var(--s1); } .legend i.b { background: var(--s2); } .legend i.c { background: var(--s3); }
   .tbl-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
   th { text-align: right; font-weight: 600; font-size: 11.5px; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
@@ -63,7 +67,8 @@
   td.bar { width: 34%; min-width: 150px; }
   .bars { display: flex; flex-direction: column; gap: 3px; }
   .bars span { display: block; height: 7px; border-radius: 0 4px 4px 0; }
-  .bars .a { background: var(--s1); } .bars .b { background: var(--s2); }
+  .bars .a { background: var(--s1); } .bars .b { background: var(--s2); } .bars .c { background: var(--s3); }
+  .chip.c { background: var(--s3-soft); color: var(--ink); } .chip.c i { background: var(--s3); }
   .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px; }
   ul.points { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.55; }
   ul.points b { font-weight: 700; }
@@ -91,18 +96,18 @@
   <section class="kpis" aria-label="Resumen">
     <div class="kpi">
       <div class="lbl">Exactitud (fórmula de la hoja Exactitud)</div>
-      <div class="pair"><span class="v b">47,9 %</span><span class="vs">Sugerido</span><span class="v a">44,1 %</span><span class="vs">Sistema</span></div>
+      <div class="pair"><span class="v b">47,9 %</span><span class="vs">Sugerido</span><span class="v a">44,1 %</span><span class="vs">Sistema</span><span class="v c">48,0 %</span><span class="vs">Usado</span></div>
       <span class="tag good">+3,8 puntos · gana 6 de 6 semanas y 4 de 4 CD</span>
     </div>
     <div class="kpi">
       <div class="lbl">Sesgo del volumen total</div>
-      <div class="pair"><span class="v b">+2,0 %</span><span class="vs">Sugerido</span><span class="v a">−10,2 %</span><span class="vs">Sistema</span></div>
+      <div class="pair"><span class="v b">+2,0 %</span><span class="vs">Sugerido</span><span class="v a">−10,2 %</span><span class="vs">Sistema</span><span class="v c">+2,1 %</span><span class="vs">Usado</span></div>
       <span class="tag good">El Sistema se queda corto; el Sugerido queda casi igual a la venta</span>
-      <div class="note">Venta real 5.341 t · Sugerido 5.449 t · Sistema 4.797 t</div>
+      <div class="note">Venta real 5.341 t · Sugerido 5.449 t · Sistema 4.797 t · Usado 5.453 t</div>
     </div>
     <div class="kpi">
       <div class="lbl">Error absoluto SKU a SKU</div>
-      <div class="pair"><span class="v b">2.839 t</span><span class="vs">Sugerido</span><span class="v a">2.684 t</span><span class="vs">Sistema</span></div>
+      <div class="pair"><span class="v b">2.839 t</span><span class="vs">Sugerido</span><span class="v a">2.684 t</span><span class="vs">Sistema</span><span class="v c">2.838 t</span><span class="vs">Usado</span></div>
       <span class="tag warn">Sin la S38: 2.363 t vs 2.329 t (prácticamente iguales)</span>
     </div>
   </section>
@@ -121,31 +126,32 @@
   <div class="two">
     <section class="panel">
       <h2>Exactitud por semana</h2>
-      <div class="legend"><span><i class="b"></i>Sugerido CPFR</span><span><i class="a"></i>FCST Sistema</span></div>
+      <div class="legend"><span><i class="b"></i>Sugerido CPFR</span><span><i class="a"></i>FCST Sistema</span><span><i class="c"></i>FCST usado (Cierre x CD subido)</span></div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>Semana</th><th>Sugerido</th><th>Sistema</th><th>Dif.</th><th></th></tr></thead>
+        <thead><tr><th>Semana</th><th>Sugerido</th><th>Sistema</th><th>Usado</th><th>Sug. − Sist.</th><th></th></tr></thead>
         <tbody>
-          <tr><td>S33</td><td>52,5 %</td><td>49,7 %</td><td class="pos">+2,8</td><td class="bar"><div class="bars"><span class="b" style="width:52.5%"></span><span class="a" style="width:49.7%"></span></div></td></tr>
-          <tr><td>S34</td><td>51,4 %</td><td>43,9 %</td><td class="pos">+7,5</td><td class="bar"><div class="bars"><span class="b" style="width:51.4%"></span><span class="a" style="width:43.9%"></span></div></td></tr>
-          <tr><td>S35</td><td>49,9 %</td><td>44,2 %</td><td class="pos">+5,7</td><td class="bar"><div class="bars"><span class="b" style="width:49.9%"></span><span class="a" style="width:44.2%"></span></div></td></tr>
-          <tr><td>S36</td><td>50,5 %</td><td>49,4 %</td><td class="pos">+1,1</td><td class="bar"><div class="bars"><span class="b" style="width:50.5%"></span><span class="a" style="width:49.4%"></span></div></td></tr>
-          <tr><td>S37</td><td>38,3 %</td><td>36,0 %</td><td class="pos">+2,3</td><td class="bar"><div class="bars"><span class="b" style="width:38.3%"></span><span class="a" style="width:36.0%"></span></div></td></tr>
-          <tr><td>S38</td><td>44,7 %</td><td>40,6 %</td><td class="pos">+4,1</td><td class="bar"><div class="bars"><span class="b" style="width:44.7%"></span><span class="a" style="width:40.6%"></span></div></td></tr>
-          <tr class="tot"><td>Total</td><td>47,9 %</td><td>44,1 %</td><td class="pos">+3,8</td><td></td></tr>
+          <tr><td>S33</td><td>52,5 %</td><td>49,7 %</td><td>52,6 %</td><td class="pos">+2,8</td><td class="bar"><div class="bars"><span class="b" style="width:52.5%"></span><span class="a" style="width:49.7%"></span><span class="c" style="width:52.6%"></span></div></td></tr>
+          <tr><td>S34</td><td>51,4 %</td><td>43,9 %</td><td>51,5 %</td><td class="pos">+7,5</td><td class="bar"><div class="bars"><span class="b" style="width:51.4%"></span><span class="a" style="width:43.9%"></span><span class="c" style="width:51.5%"></span></div></td></tr>
+          <tr><td>S35</td><td>49,9 %</td><td>44,2 %</td><td>49,7 %</td><td class="pos">+5,7</td><td class="bar"><div class="bars"><span class="b" style="width:49.9%"></span><span class="a" style="width:44.2%"></span><span class="c" style="width:49.7%"></span></div></td></tr>
+          <tr><td>S36</td><td>50,5 %</td><td>49,4 %</td><td>50,5 %</td><td class="pos">+1,1</td><td class="bar"><div class="bars"><span class="b" style="width:50.5%"></span><span class="a" style="width:49.4%"></span><span class="c" style="width:50.5%"></span></div></td></tr>
+          <tr><td>S37</td><td>38,3 %</td><td>36,0 %</td><td>38,4 %</td><td class="pos">+2,3</td><td class="bar"><div class="bars"><span class="b" style="width:38.3%"></span><span class="a" style="width:36.0%"></span><span class="c" style="width:38.4%"></span></div></td></tr>
+          <tr><td>S38</td><td>44,7 %</td><td>40,6 %</td><td>44,8 %</td><td class="pos">+4,1</td><td class="bar"><div class="bars"><span class="b" style="width:44.7%"></span><span class="a" style="width:40.6%"></span><span class="c" style="width:44.8%"></span></div></td></tr>
+          <tr class="tot"><td>Total</td><td>47,9 %</td><td>44,1 %</td><td>48,0 %</td><td class="pos">+3,8</td><td></td></tr>
         </tbody>
       </table></div>
+      <p class="sub" style="margin:0">El usado queda casi igual al Sugerido porque en el 99,6 % de las filas es el mismo número: las diferencias son los ajustes posteriores (desbloqueos y cambios manuales).</p>
     </section>
     <section class="panel">
       <h2>Exactitud por CD</h2>
-      <div class="legend"><span><i class="b"></i>Sugerido CPFR</span><span><i class="a"></i>FCST Sistema</span></div>
+      <div class="legend"><span><i class="b"></i>Sugerido CPFR</span><span><i class="a"></i>FCST Sistema</span><span><i class="c"></i>FCST usado</span></div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>CD</th><th>Sugerido</th><th>Sistema</th><th>Dif.</th><th>Venta (t)</th></tr></thead>
+        <thead><tr><th>CD</th><th>Sugerido</th><th>Sistema</th><th>Usado</th><th>Sug. − Sist.</th><th>Venta (t)</th></tr></thead>
         <tbody>
-          <tr><td>La Serena</td><td>52,9 %</td><td>38,9 %</td><td class="pos">+14,0</td><td>641</td></tr>
-          <tr><td>Antofagasta</td><td>49,3 %</td><td>40,0 %</td><td class="pos">+9,3</td><td>451</td></tr>
-          <tr><td>Chillán</td><td>48,4 %</td><td>46,7 %</td><td class="pos">+1,7</td><td>3.606</td></tr>
-          <tr><td>Osorno</td><td>38,6 %</td><td>37,7 %</td><td class="pos">+0,9</td><td>643</td></tr>
-          <tr class="tot"><td>Total</td><td>47,9 %</td><td>44,1 %</td><td class="pos">+3,8</td><td>5.341</td></tr>
+          <tr><td>La Serena</td><td>52,9 %</td><td>38,9 %</td><td>53,0 %</td><td class="pos">+14,0</td><td>641</td></tr>
+          <tr><td>Antofagasta</td><td>49,3 %</td><td>40,0 %</td><td>49,3 %</td><td class="pos">+9,3</td><td>451</td></tr>
+          <tr><td>Chillán</td><td>48,4 %</td><td>46,7 %</td><td>48,4 %</td><td class="pos">+1,7</td><td>3.606</td></tr>
+          <tr><td>Osorno</td><td>38,6 %</td><td>37,7 %</td><td>39,1 %</td><td class="pos">+0,9</td><td>643</td></tr>
+          <tr class="tot"><td>Total</td><td>47,9 %</td><td>44,1 %</td><td>48,0 %</td><td class="pos">+3,8</td><td>5.341</td></tr>
         </tbody>
       </table></div>
       <p class="sub" style="margin:0">La mayor ganancia está en los CD chicos. Chillán concentra dos tercios de la venta y ahí la mejora es menor.</p>
@@ -170,16 +176,18 @@
 
   <div class="two">
     <section class="panel">
-      <h2>S39 por CD: Sugerido CPFR vs Sistema</h2>
+      <h2>S39 por CD: Sugerido CPFR, Sistema y usado</h2>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>CD</th><th>Sugerido</th><th>Sistema</th><th>Error Sug.</th><th>Error Sist.</th><th>Gana</th></tr></thead>
+        <thead><tr><th>CD</th><th>Sugerido</th><th>Sistema</th><th>Usado</th><th>Error Sug.</th><th>Error Sist.</th><th>Error usado</th><th>Gana</th></tr></thead>
         <tbody>
-          <tr><td>La Serena</td><td class="win">57,2 %</td><td>45,6 %</td><td>52 t</td><td>51 t</td><td><span class="chip b"><i></i>Sugerido</span></td></tr>
-          <tr><td>Antofagasta</td><td>31,2 %</td><td>31,3 %</td><td>65 t</td><td class="win">56 t</td><td><span class="chip">Empate</span></td></tr>
-          <tr><td>Chillán</td><td>42,2 %</td><td class="win">47,6 %</td><td>485 t</td><td class="win">311 t</td><td><span class="chip a"><i></i>Sistema</span></td></tr>
-          <tr><td>Osorno</td><td>0 %</td><td>0 %</td><td>131 t</td><td>128 t</td><td><span class="chip">Empate</span></td></tr>
+          <tr><td>La Serena</td><td class="win">57,2 %</td><td>45,6 %</td><td class="win">57,2 %</td><td>52 t</td><td>51 t</td><td>52 t</td><td><span class="chip b"><i></i>Sugerido</span></td></tr>
+          <tr><td>Antofagasta</td><td>31,2 %</td><td>31,3 %</td><td>32,0 %</td><td>65 t</td><td class="win">56 t</td><td>65 t</td><td><span class="chip">Empate</span></td></tr>
+          <tr><td>Chillán</td><td>42,2 %</td><td class="win">47,6 %</td><td class="win">47,6 %</td><td>485 t</td><td class="win">311 t</td><td class="win">311 t</td><td><span class="chip a"><i></i>Sistema</span></td></tr>
+          <tr><td>Osorno</td><td>0 %</td><td>0 %</td><td>0 %</td><td>131 t</td><td>128 t</td><td>128 t</td><td><span class="chip">Empate</span></td></tr>
+          <tr class="tot"><td>Total</td><td>38,1 %</td><td>39,0 %</td><td class="win">40,6 %</td><td>733 t</td><td class="win">546 t</td><td>555 t</td><td><span class="chip c"><i></i>Usado</span></td></tr>
         </tbody>
       </table></div>
+      <p class="sub" style="margin:0">El usado es el Sugerido en Antofagasta y La Serena, y el Sistema en Chillán y Osorno.</p>
       <p class="sub" style="margin:0">Antofagasta: el Sugerido pronosticó 69 % más de lo pedido. Osorno: los dos quedan en 0 % por un solo pedido atípico; sin él, ~46 % cada uno.</p>
     </section>
     <section class="panel">
@@ -208,6 +216,6 @@
   </section>
 
   <footer>
-    Fuente: maestro FCSTxCD_S38-2026 (hoja BASE, Cantidad Solicitada) y hojas Sugeridos vs Sistema de los Cierre x CD 202632 a 202637 (forecast de S33 a S38). Se comparan los SKU × CD que el equipo CPFR revisó (93 % de la venta de los 4 CD). Error medido por CD × SKU × semana; la venta de los dos centros de Chillán (D106 y D009) se suma. Exactitud = 1 − ΣError / ΣFCST, sin bajar de 0 %. Con el cálculo fila por fila exacto de la hoja Exactitud (sin sumar los centros de Chillán) el resultado va en la misma dirección: 38,7 % contra 37,1 %. Calculado de forma independiente y contrastado con el Comparador FCST x CD. S39: export QlikView de la semana 202639, cierre 202638 (FCST subido y Sugeridos vs Sistema de Antofagasta y La Serena) y archivo FCST_CD_REGIONES_SUGERIDOS_SEM39 del equipo CPFR; en Chillán y Osorno el Sistema es el FCST subido. CD normalizados como en el uploader (Temuco y Planta Chillán suman a Chillán).
+    Fuente: maestro FCSTxCD_S38-2026 (hoja BASE, Cantidad Solicitada) y hojas Sugeridos vs Sistema de los Cierre x CD 202632 a 202637 (forecast de S33 a S38). FCST usado = hoja FCST del maestro, es decir el Cierre x CD que realmente se subió. Se comparan los SKU × CD que el equipo CPFR revisó (93 % de la venta de los 4 CD), los mismos para los tres forecasts. Error medido por CD × SKU × semana; la venta de los dos centros de Chillán (D106 y D009) se suma. Exactitud = 1 − ΣError / ΣFCST, sin bajar de 0 %. Con el cálculo fila por fila exacto de la hoja Exactitud (sin sumar los centros de Chillán) el resultado va en la misma dirección: 38,7 % contra 37,1 %. Calculado de forma independiente y contrastado con el Comparador FCST x CD. S39: export QlikView de la semana 202639, cierre 202638 (FCST subido y Sugeridos vs Sistema de Antofagasta y La Serena) y archivo FCST_CD_REGIONES_SUGERIDOS_SEM39 del equipo CPFR; en Chillán y Osorno el Sistema es el FCST subido. CD normalizados como en el uploader (Temuco y Planta Chillán suman a Chillán).
   </footer>
 </div>
