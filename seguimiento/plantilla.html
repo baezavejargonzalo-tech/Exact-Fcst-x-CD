@@ -164,7 +164,7 @@
 
 <div class="wrap">
   <header>
-    <p class="eyebrow">Lácteos y Jugos · Seguimiento semanal</p>
+    <p class="eyebrow">Seguimiento semanal · Sell In vs FCST</p>
     <h1>FCST por cadena</h1>
     <nav class="tabs" role="tablist" aria-label="Vistas">
       <button role="tab" id="tabExact" aria-controls="vExact" aria-selected="true">Exactitud</button>
@@ -177,6 +177,7 @@
       <div class="field"><label for="xSem">Semana</label><select id="xSem"></select></div>
       <div class="field"><label for="xMed">Real</label>
         <select id="xMed"><option value="sellin">Sell In</option><option value="real">Venta Real</option><option value="solic">Solicitado</option></select></div>
+      <div class="field"><label for="xGrupo">Grupo</label><select id="xGrupo"></select></div>
       <div class="field"><label for="xCad">Cadena</label><select id="xCad"></select></div>
       <div class="field"><label for="xCat">Categoría</label><select id="xCat"></select></div>
       <div class="field"><label for="xMarca">Marca</label><select id="xMarca"></select></div>
@@ -216,7 +217,10 @@
   </div>
 
   <div class="view" id="vAvance" role="tabpanel" aria-labelledby="tabAvance" hidden>
-  <p class="lede" id="lede"></p>
+  <section class="filters" aria-label="Filtros del avance">
+    <div class="field"><label for="aGrupo">Grupo</label><select id="aGrupo"></select></div>
+    <p class="lede" id="lede" style="flex:1 1 320px;font-size:13px"></p>
+  </section>
   <section class="kpis" id="kpis" aria-label="Resumen de la semana"></section>
 
   <section class="panel" aria-labelledby="hBars">
@@ -260,8 +264,11 @@
   var DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   function fechaLarga(iso) { var d = new Date(iso + "T12:00:00"); return DIAS[d.getDay()] + " " + iso.slice(8, 10) + "-" + iso.slice(5, 7) + "-" + iso.slice(0, 4); }
 
-  var C = D.cadenas;
-  var tot = C.reduce(function (a, c) { a.f += c.FCST; a.s += c.Solicitado; a.r += c["Venta Real"]; a.q += c.Quebrados; return a; }, { f: 0, s: 0, r: 0, q: 0 });
+  var ALL = D.skus, H = D.historia || [];
+  var tip = $("tip");
+  var C = [], skus = [], tot = null;
+  function row(k, v) { return '<div class="r"><span>' + k + "</span><b>" + v + "</b></div>"; }
+  function kpi(v, k, x) { return '<div class="kpi"><div class="v">' + v + '</div><div class="k">' + k + "</div>" + x + "</div>"; }
 
   function estado(c) {
     if (c.Solicitado <= 0) return { k: "cero", l: "Sin pedidos" };
@@ -269,77 +276,123 @@
     if (c["Avance %"] >= 1) return { k: "sobre", l: "Sobre FCST" };
     return { k: "ok", l: "En curso" };
   }
-
+  var grupos = Array.from(new Set(ALL.map(function (s) { return s.Grupo; }))).sort();
+  $("aGrupo").innerHTML = '<option value="">Todos los grupos</option>' + grupos.map(function (g) { return '<option value="' + esc(g) + '">' + esc(nombre(g.replace(/^GRUPO /, ""))) + "</option>"; }).join("");
   $("tabAvance").textContent = "Avance S" + D.semana;
-  $("lede").textContent = "Corte del " + fechaLarga(D.fecha) + ". Toneladas solicitadas en la semana " + D.anio + D.semana + " contra el FCST S" + D.semana + " que cargaste, solo SKU del Grupo Lácteos y Jugos.";
 
-  // ---------- KPIs ----------
-  var av = tot.s / tot.f;
-  $("kpis").innerHTML =
-    kpi(t(tot.f) + " t", "FCST S" + D.semana, "") +
-    kpi(t(tot.s) + " t", "Solicitado a la fecha", '<div class="meter"><i style="width:' + Math.min(100, av * 100) + '%"></i></div><span class="x">' + p(av) + " del FCST</span>") +
-    kpi(t(tot.f - tot.s) + " t", "Falta para llegar al FCST", "") +
-    kpi(t(tot.q) + " t", "Quebrado", '<span class="x" style="color:var(--crit)">' + p(tot.q / tot.s) + " de lo solicitado</span>");
-  function kpi(v, k, x) { return '<div class="kpi"><div class="v">' + v + '</div><div class="k">' + k + "</div>" + x + "</div>"; }
+  // Solicitado por cadena en el corte anterior (para la columna "vs corte anterior")
+  function histTot(h, g) {
+    var o = { f: 0, s: 0, cad: {} };
+    h.filas.forEach(function (r) { if (g && r[0] !== g) return; o.f += r[2]; o.s += r[3]; o.cad[r[1]] = (o.cad[r[1]] || 0) + r[3]; });
+    return o;
+  }
 
-  // ---------- barras ----------
-  var max = Math.max.apply(null, C.map(function (c) { return Math.max(c.FCST, c.Solicitado); }));
-  $("bars").innerHTML = C.map(function (c, i) {
-    var wf = c.FCST / max * 100, ws = c.Solicitado / max * 100;
-    return '<div class="bar-row"><div class="bar-name" title="' + esc(nombre(c.CADENA)) + '">' + esc(nombre(c.CADENA)) + '</div>' +
-      '<div class="bar-track" data-i="' + i + '"><span class="fcst" style="width:' + wf + '%"></span>' +
-      '<span class="sol" style="width:' + ws + '%"></span><span class="tick" style="left:calc(' + wf + '% - 1px)"></span></div>' +
-      '<div class="bar-pct">' + p(c["Avance %"]) + "</div></div>";
-  }).join("");
-  var tip = $("tip");
+  function render() {
+    var g = $("aGrupo").value;
+    $("aGrupo").classList.toggle("on", !!g);
+    skus = ALL.filter(function (s) { return !g || s.Grupo === g; });
+    var m = new Map();
+    skus.forEach(function (s) {
+      var c = m.get(s.Cadena); if (!c) { c = { Cadena: s.Cadena, FCST: 0, Solicitado: 0, "Venta Real": 0, Quebrados: 0 }; m.set(s.Cadena, c); }
+      c.FCST += s.FCST; c.Solicitado += s.Solicitado; c["Venta Real"] += s["Venta Real"]; c.Quebrados += s.Quebrados;
+    });
+    C = Array.from(m.values()).map(function (c) {
+      c["Avance %"] = c.FCST > 0 ? c.Solicitado / c.FCST : null; c["Falta vs FCST"] = c.FCST - c.Solicitado;
+      c["Quiebre %"] = c.Solicitado > 0 ? c.Quebrados / c.Solicitado : null; return c;
+    }).sort(function (a, b) { return b.FCST - a.FCST; });
+    tot = C.reduce(function (a, c) { a.f += c.FCST; a.s += c.Solicitado; a.r += c["Venta Real"]; a.q += c.Quebrados; return a; }, { f: 0, s: 0, r: 0, q: 0 });
+    var prevIdx = -1;
+    for (var i = H.length - 1; i >= 0; i--) if (H[i].fecha < D.fecha) { prevIdx = i; break; }
+    var prev = prevIdx >= 0 ? histTot(H[prevIdx], g) : null;
+
+    $("lede").textContent = "Corte del " + fechaLarga(D.fecha) + ". Toneladas solicitadas en la semana " + D.anio + D.semana + " contra tu FCST S" + D.semana + (g ? ", " + nombre(g) : ", todos los grupos") + "." +
+      (prev ? " Comparado con el corte del " + fechaLarga(H[prevIdx].fecha) + "." : "");
+
+    var av = tot.s / tot.f;
+    $("kpis").innerHTML =
+      kpi(t(tot.f) + " t", "FCST S" + D.semana, "") +
+      kpi(t(tot.s) + " t", "Solicitado a la fecha", '<div class="meter"><i style="width:' + Math.min(100, av * 100) + '%"></i></div><span class="x">' + p(av) + " del FCST" + (prev ? ' · <span style="color:var(--muted)">+' + t(tot.s - prev.s) + " t desde el corte anterior</span>" : "") + "</span>") +
+      kpi(t(tot.f - tot.s) + " t", "Falta para llegar al FCST", "") +
+      kpi(t(tot.q) + " t", "Quebrado", '<span class="x" style="color:var(--crit)">' + p(tot.q / tot.s) + " de lo solicitado</span>");
+
+    var max = Math.max.apply(null, C.map(function (c) { return Math.max(c.FCST, c.Solicitado); }).concat([1e-9]));
+    $("bars").innerHTML = C.map(function (c, i) {
+      var wf = c.FCST / max * 100, ws = c.Solicitado / max * 100;
+      return '<div class="bar-row"><div class="bar-name" title="' + esc(nombre(c.Cadena)) + '">' + esc(nombre(c.Cadena)) + '</div>' +
+        '<div class="bar-track" data-i="' + i + '"><span class="fcst" style="width:' + wf + '%"></span>' +
+        '<span class="sol" style="width:' + ws + '%"></span><span class="tick" style="left:calc(' + wf + '% - 1px)"></span></div>' +
+        '<div class="bar-pct">' + p(c["Avance %"]) + "</div></div>";
+    }).join("");
+
+    function topSku(cad, fn, n) { return skus.filter(function (s) { return s.Cadena === cad; }).sort(fn).slice(0, n); }
+    var notas = [];
+    C.filter(function (c) { return c["Avance %"] >= 1; }).sort(function (a, b) { return a["Falta vs FCST"] - b["Falta vs FCST"]; }).forEach(function (c) {
+      var s = topSku(c.Cadena, function (a, b) { return (b.Solicitado - b.FCST) - (a.Solicitado - a.FCST); }, 2);
+      notas.push({ k: "warn", h: nombre(c.Cadena) + " ya pasó el FCST (" + p(c["Avance %"]) + ")",
+        b: "Lleva " + t(c.Solicitado) + " t contra " + t(c.FCST) + " t. Lo explican " + s.map(function (x) { return esc(x.Producto) + " (" + t(x.Solicitado) + " t vs " + t(x.FCST) + " t)"; }).join(" y ") + "." });
+    });
+    C.filter(function (c) { return c["Quiebre %"] >= 0.15 && c.Quebrados >= 5; }).sort(function (a, b) { return b.Quebrados - a.Quebrados; }).forEach(function (c) {
+      var s = topSku(c.Cadena, function (a, b) { return b.Quebrados - a.Quebrados; }, 2);
+      notas.push({ k: "crit", h: nombre(c.Cadena) + ": " + p(c["Quiebre %"]) + " de quiebre",
+        b: t(c.Quebrados) + " t quebradas de " + t(c.Solicitado) + " t solicitadas. Principalmente " + s.map(function (x) { return esc(x.Producto) + " (" + t(x.Quebrados) + " t)"; }).join(" y ") + "." });
+    });
+    var sinPed = C.filter(function (c) { return c.Solicitado <= 0 && c.FCST > 0; });
+    if (sinPed.length) notas.push({ k: "", h: "Sin pedidos todavía", b: sinPed.map(function (c) { return nombre(c.Cadena) + " (FCST " + t(c.FCST) + " t)"; }).join(", ") + "." });
+    $("alertas").innerHTML = notas.map(function (n) { return '<div class="note ' + n.k + '"><b>' + n.h + "</b>" + n.b + "</div>"; }).join("");
+
+    var head = '<thead><tr><th class="l">Cadena</th><th>FCST (t)</th><th>Solicitado (t)</th>' + (prev ? "<th>vs corte anterior</th>" : "") + '<th>Avance</th><th>Falta (t)</th><th>Venta real (t)</th><th>Quebrado (t)</th><th class="l">Estado</th></tr></thead>';
+    var ncol = prev ? 9 : 8;
+    var body = C.map(function (c, i) {
+      var e = estado(c), dlt = prev ? c.Solicitado - (prev.cad[c.Cadena] || 0) : 0;
+      return '<tr class="cad" tabindex="0" aria-expanded="false" data-i="' + i + '"><td class="l"><span class="car">›</span> ' + esc(nombre(c.Cadena)) + "</td><td>" + t(c.FCST) + "</td><td>" + t(c.Solicitado) + "</td>" +
+        (prev ? '<td class="neg">' + (Math.abs(dlt) < 0.05 ? "–" : (dlt > 0 ? "+" : "") + t(dlt)) + "</td>" : "") + "<td>" + p(c["Avance %"]) +
+        "</td><td>" + (c["Falta vs FCST"] < 0 ? '<span class="pos">+' + t(-c["Falta vs FCST"]) + " sobre</span>" : t(c["Falta vs FCST"])) + "</td><td>" + t(c["Venta Real"]) + "</td><td>" + t(c.Quebrados) +
+        '</td><td class="l"><span class="chip ' + e.k + '">' + e.l + "</span></td></tr>" +
+        '<tr class="det" hidden data-for="' + i + '"><td colspan="' + ncol + '"></td></tr>';
+    }).join("");
+    var totRow = '<tr class="tot"><td class="l">Total</td><td>' + t(tot.f) + "</td><td>" + t(tot.s) + "</td>" + (prev ? "<td>+" + t(tot.s - prev.s) + "</td>" : "") + "<td>" + p(av) + "</td><td>" + t(tot.f - tot.s) + "</td><td>" + t(tot.r) + "</td><td>" + t(tot.q) + '</td><td></td></tr>';
+    $("tbl").innerHTML = head + "<tbody>" + body + totRow + "</tbody>";
+
+    // historia (solo cortes con este mismo FCST)
+    var pts = H.map(function (h) { var o = histTot(h, g); return { f: h.fecha, v: o.f > 0 ? o.s / o.f : 0 }; });
+    if (pts.length < 2) {
+      $("hist").innerHTML = '<div class="empty">Por ahora hay un solo corte (' + fechaLarga(D.fecha) + ", " + p(av) + "). Desde el próximo archivo que cargues aparece la curva día a día.</div>";
+    } else {
+      var W = 640, Hh = 220, L = 44, R = 16, T = 18, B = 28;
+      pts.forEach(function (q, i) { q.x = L + (W - L - R) * (pts.length === 1 ? 0 : i / (pts.length - 1)); });
+      if (pts.length > 1) { pts[0].x = L + 20; pts[pts.length - 1].x = W - R - 20; pts.forEach(function (q, i) { q.x = L + 20 + (W - L - R - 40) * i / (pts.length - 1); }); }
+      var ymax = Math.max(1, Math.ceil(Math.max.apply(null, pts.map(function (q) { return q.v; })) * 4) / 4);
+      var y = function (v) { return T + (Hh - T - B) * (1 - v / ymax); };
+      var s = "";
+      for (var k = 0; k <= ymax + 1e-9; k += 0.25) s += '<line class="gl" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(k) + '" y2="' + y(k) + '"/><text class="ax" x="' + (L - 6) + '" y="' + (y(k) + 4) + '" text-anchor="end">' + Math.round(k * 100) + "%</text>";
+      s += '<polyline class="ln" points="' + pts.map(function (q) { return q.x + "," + y(q.v); }).join(" ") + '"/>';
+      pts.forEach(function (q) {
+        s += '<circle class="dot" cx="' + q.x + '" cy="' + y(q.v) + '" r="4"/><text class="ax" x="' + q.x + '" y="' + (Hh - 8) + '" text-anchor="middle">' + fechaLarga(q.f).split(" ")[0].slice(0, 3) + " " + q.f.slice(8, 10) + "/" + q.f.slice(5, 7) + "</text>" +
+          '<text class="lab" x="' + q.x + '" y="' + (y(q.v) - 10) + '" text-anchor="middle">' + p(q.v) + "</text>";
+      });
+      $("hist").innerHTML = '<svg viewBox="0 0 ' + W + " " + Hh + '" role="img" aria-label="Avance total por día">' + s + "</svg>";
+    }
+
+    var sinF = skus.filter(function (s) { return s.FCST === 0 && s.Solicitado > 0; });
+    $("pie").innerHTML = "Solicitado, venta real y quebrado vienen del export de la base (semana " + D.anio + D.semana + "). El FCST es tu archivo de la S" + D.semana + ", sumado por cadena y SKU (Cencosud = Jumbo + Santa Isabel; las cadenas escritas sin espacios se juntan con su cadena).<br>" +
+      sinF.length + " SKU con pedidos no tienen FCST; suman " + t(sinF.reduce(function (a, s) { return a + s.Solicitado; }, 0)) + " t.";
+  }
+
   $("bars").addEventListener("mousemove", function (e) {
     var tr = e.target.closest(".bar-track");
     if (!tr) { tip.hidden = true; return; }
     var c = C[+tr.dataset.i];
-    tip.innerHTML = '<div class="h">' + esc(nombre(c.CADENA)) + "</div>" +
+    tip.innerHTML = '<div class="h">' + esc(nombre(c.Cadena)) + "</div>" +
       row("FCST", t(c.FCST) + " t") + row("Solicitado", t(c.Solicitado) + " t") + row("Avance", p(c["Avance %"])) +
       row(c["Falta vs FCST"] >= 0 ? "Falta" : "Sobre FCST", t(Math.abs(c["Falta vs FCST"])) + " t") +
       row("Venta real", t(c["Venta Real"]) + " t") + row("Quebrado", t(c.Quebrados) + " t");
     tip.hidden = false;
-    var x = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
-    tip.style.left = x + "px"; tip.style.top = (e.clientY + 14) + "px";
+    tip.style.left = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8) + "px"; tip.style.top = (e.clientY + 14) + "px";
   });
   $("bars").addEventListener("mouseleave", function () { tip.hidden = true; });
-  function row(k, v) { return '<div class="r"><span>' + k + "</span><b>" + v + "</b></div>"; }
-
-  // ---------- alertas automáticas ----------
-  var skus = D.skus;
-  function topSku(cad, fn, n) { return skus.filter(function (s) { return s.CADENA === cad; }).sort(fn).slice(0, n); }
-  var notas = [];
-  var sobre = C.filter(function (c) { return c["Avance %"] >= 1; }).sort(function (a, b) { return a["Falta vs FCST"] - b["Falta vs FCST"]; });
-  sobre.forEach(function (c) {
-    var s = topSku(c.CADENA, function (a, b) { return (b.Solicitado - b.FCST) - (a.Solicitado - a.FCST); }, 2);
-    notas.push({ k: "warn", h: nombre(c.CADENA) + " ya pasó el FCST (" + p(c["Avance %"]) + ")",
-      b: "Lleva " + t(c.Solicitado) + " t contra " + t(c.FCST) + " t. Lo explican " + s.map(function (x) { return esc(x.Producto) + " (" + t(x.Solicitado) + " t vs " + t(x.FCST) + " t)"; }).join(" y ") + "." });
-  });
-  C.filter(function (c) { return c["Quiebre %"] >= 0.15 && c.Quebrados >= 5; }).sort(function (a, b) { return b.Quebrados - a.Quebrados; }).forEach(function (c) {
-    var s = topSku(c.CADENA, function (a, b) { return b.Quebrados - a.Quebrados; }, 2);
-    notas.push({ k: "crit", h: nombre(c.CADENA) + ": " + p(c["Quiebre %"]) + " de quiebre",
-      b: t(c.Quebrados) + " t quebradas de " + t(c.Solicitado) + " t solicitadas. Principalmente " + s.map(function (x) { return esc(x.Producto) + " (" + t(x.Quebrados) + " t)"; }).join(" y ") + "." });
-  });
-  var sinPed = C.filter(function (c) { return c.Solicitado <= 0 && c.FCST > 0; });
-  if (sinPed.length) notas.push({ k: "", h: "Sin pedidos todavía", b: sinPed.map(function (c) { return nombre(c.CADENA) + " (FCST " + t(c.FCST) + " t)"; }).join(", ") + "." });
-  $("alertas").innerHTML = notas.map(function (n) { return '<div class="note ' + n.k + '"><b>' + n.h + "</b>" + n.b + "</div>"; }).join("");
-
-  // ---------- tabla ----------
-  var head = '<thead><tr><th class="l">Cadena</th><th>FCST (t)</th><th>Solicitado (t)</th><th>Avance</th><th>Falta (t)</th><th>Venta real (t)</th><th>Quebrado (t)</th><th class="l">Estado</th></tr></thead>';
-  var body = C.map(function (c, i) {
-    var e = estado(c);
-    return '<tr class="cad" tabindex="0" aria-expanded="false" data-i="' + i + '"><td class="l"><span class="car">›</span> ' + esc(nombre(c.CADENA)) + "</td><td>" + t(c.FCST) + "</td><td>" + t(c.Solicitado) + "</td><td>" + p(c["Avance %"]) +
-      "</td><td>" + (c["Falta vs FCST"] < 0 ? '<span class="pos">+' + t(-c["Falta vs FCST"]) + " sobre</span>" : t(c["Falta vs FCST"])) + "</td><td>" + t(c["Venta Real"]) + "</td><td>" + t(c.Quebrados) +
-      '</td><td class="l"><span class="chip ' + e.k + '">' + e.l + "</span></td></tr>" +
-      '<tr class="det" hidden data-for="' + i + '"><td colspan="8"></td></tr>';
-  }).join("");
-  var totRow = '<tr class="tot"><td class="l">Total</td><td>' + t(tot.f) + "</td><td>" + t(tot.s) + "</td><td>" + p(av) + "</td><td>" + t(tot.f - tot.s) + "</td><td>" + t(tot.r) + "</td><td>" + t(tot.q) + '</td><td></td></tr>';
-  $("tbl").innerHTML = head + "<tbody>" + body + totRow + "</tbody>";
 
   function detalle(cad) {
-    var l = skus.filter(function (s) { return s.CADENA === cad; }).sort(function (a, b) { return Math.abs(b.Solicitado - b.FCST) - Math.abs(a.Solicitado - a.FCST); });
+    var l = skus.filter(function (s) { return s.Cadena === cad; }).sort(function (a, b) { return Math.abs(b.Solicitado - b.FCST) - Math.abs(a.Solicitado - a.FCST); });
     return '<table class="sku"><thead><tr><th class="l">SKU</th><th class="l">Producto</th><th>FCST</th><th>Solicitado</th><th>Dif.</th><th>Avance</th><th>Quebrado</th></tr></thead><tbody>' +
       l.map(function (s) {
         var d = s.Solicitado - s.FCST; if (Math.abs(d) < 0.05) d = 0;
@@ -350,32 +403,13 @@
   function toggle(tr) {
     var i = tr.dataset.i, det = document.querySelector('tr.det[data-for="' + i + '"]');
     var open = tr.getAttribute("aria-expanded") !== "true";
-    if (open && !det.firstChild.innerHTML) det.firstChild.innerHTML = detalle(C[+i].CADENA);
+    if (open && !det.firstChild.innerHTML) det.firstChild.innerHTML = detalle(C[+i].Cadena);
     tr.setAttribute("aria-expanded", open); det.hidden = !open;
   }
   $("tbl").addEventListener("click", function (e) { var tr = e.target.closest("tr.cad"); if (tr) toggle(tr); });
   $("tbl").addEventListener("keydown", function (e) { var tr = e.target.closest("tr.cad"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(tr); } });
-
-  // ---------- historia ----------
-  var H = D.historia || [];
-  if (H.length < 2) {
-    $("hist").innerHTML = '<div class="empty">Por ahora hay un solo corte (' + fechaLarga(H.length ? H[0].fecha : D.fecha) + ", " + p(av) + "). Desde el próximo archivo que cargues aparece la curva día a día.</div>";
-  } else {
-    var W = 640, Hh = 220, L = 44, R = 16, T = 18, B = 28;
-    var pts = H.map(function (h, i) { return { x: L + (W - L - R) * (H.length === 1 ? 0 : i / (H.length - 1)), v: h.total / tot.f, f: h.fecha }; });
-    var ymax = Math.max(1, Math.ceil(Math.max.apply(null, pts.map(function (q) { return q.v; })) * 4) / 4);
-    function y(v) { return T + (Hh - T - B) * (1 - v / ymax); }
-    var g = "";
-    for (var k = 0; k <= ymax + 1e-9; k += 0.25) g += '<line class="gl" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(k) + '" y2="' + y(k) + '"/><text class="ax" x="' + (L - 6) + '" y="' + (y(k) + 4) + '" text-anchor="end">' + Math.round(k * 100) + "%</text>";
-    g += '<polyline class="ln" points="' + pts.map(function (q) { return q.x + "," + y(q.v); }).join(" ") + '"/>';
-    pts.forEach(function (q, i) {
-      g += '<circle class="dot" cx="' + q.x + '" cy="' + y(q.v) + '" r="4"/><text class="ax" x="' + q.x + '" y="' + (Hh - 8) + '" text-anchor="middle">' + q.f.slice(8, 10) + "/" + q.f.slice(5, 7) + "</text>";
-      if (i === pts.length - 1) g += '<text class="lab" x="' + q.x + '" y="' + (y(q.v) - 10) + '" text-anchor="end">' + p(q.v) + "</text>";
-    });
-    $("hist").innerHTML = '<svg viewBox="0 0 ' + W + " " + Hh + '" role="img" aria-label="Avance total por día">' + g + "</svg>";
-  }
-
-  $("pie").innerHTML = "Solicitado, venta real y quebrado vienen del export de la base (semana " + D.anio + D.semana + "). El FCST es la columna S" + D.semana + " de la hoja FCST, sumada por cadena y SKU (Cencosud = Jumbo + Santa Isabel).<br>Hay " + skus.filter(function (s) { return s.FCST === 0 && s.Solicitado > 0; }).length + " SKU con pedidos que no tienen FCST en el archivo; suman " + t(skus.filter(function (s) { return s.FCST === 0; }).reduce(function (a, s) { return a + s.Solicitado; }, 0)) + " t.";
+  $("aGrupo").addEventListener("change", render);
+  render();
 })();
 
 // ================= Exactitud =================
@@ -409,7 +443,7 @@
   var rows = X.filas.map(function (r) {
     var s = X.skus[r[2]] || {};
     return { sem: r[0], cad: r[1], sku: r[2], f: r[3], sellin: r[4], real: r[5], solic: r[6], queb: r[7],
-      n: s.n || "", cat: s.cat || "Sin categoría", marca: s.marca || "Sin marca", foco: s.foco || "Sin foco" };
+      grupo: r[8] || "SIN GRUPO", n: s.n || "", cat: s.cat || "Sin categoría", marca: s.marca || "Sin marca", foco: s.foco || "Sin foco" };
   });
   var semInfo = {}; X.semanas.forEach(function (s) { semInfo[s.sem] = s; });
 
@@ -419,6 +453,7 @@
   function uniq(k) { var s = {}; rows.forEach(function (r) { s[r[k]] = 1; }); return Object.keys(s).sort(); }
   var ultimaCerrada = X.semanas.filter(function (s) { return s.sellin > 0; }).map(function (s) { return s.sem; }).pop();
   opts("xSem", X.semanas.map(function (s) { return [s.sem, "S" + s.sem + (s.sellin > 0 ? " · cerrada" : " · en curso")]; }).reverse());
+  opts("xGrupo", uniq("grupo").map(function (v) { return [v, nombre(v.replace(/^GRUPO /, ""))]; }), "Todos");
   opts("xCad", uniq("cad").map(function (v) { return [v, nombre(v)]; }), "Todas");
   opts("xCat", uniq("cat").map(function (v) { return [v, cap(v)]; }), "Todas");
   opts("xMarca", uniq("marca").map(function (v) { return [v, v]; }), "Todas");
@@ -442,10 +477,10 @@
   function groupBy(list, keyFn) { var g = new Map(); list.forEach(function (x) { var k = keyFn(x); if (!g.has(k)) g.set(k, []); g.get(k).push(x); }); return g; }
 
   function filtered(skip) {
-    var sem = +$("xSem").value, cad = $("xCad").value, cat = $("xCat").value, marca = $("xMarca").value, foco = $("xFoco").value;
+    var sem = +$("xSem").value, grp = $("xGrupo").value, cad = $("xCad").value, cat = $("xCat").value, marca = $("xMarca").value, foco = $("xFoco").value;
     var q = $("xFind").value.trim().toUpperCase();
     return rows.filter(function (r) {
-      return r.sem === sem && (skip === "cad" || !cad || r.cad === cad) && (skip === "cat" || !cat || r.cat === cat) &&
+      return r.sem === sem && (!grp || r.grupo === grp) && (skip === "cad" || !cad || r.cad === cad) && (skip === "cat" || !cat || r.cat === cat) &&
         (!marca || r.marca === marca) && (!foco || r.foco === foco) &&
         (!q || String(r.sku).indexOf(q) >= 0 || r.n.toUpperCase().indexOf(q) >= 0);
     });
@@ -459,7 +494,7 @@
 
   function render() {
     var m = $("xMed").value, sem = +$("xSem").value, info = semInfo[sem];
-    ["xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).classList.toggle("on", !!$(id).value); });
+    ["xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).classList.toggle("on", !!$(id).value); });
     var aviso = $("xAviso");
     if (m === "sellin" && info && !(info.sellin > 0)) {
       aviso.hidden = false;
@@ -539,9 +574,9 @@
   }
   var barData = [];
 
-  ["xSem", "xMed", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).addEventListener("change", function () { st.lim = 50; render(); }); });
+  ["xSem", "xMed", "xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).addEventListener("change", function () { st.lim = 50; render(); }); });
   $("xFind").addEventListener("input", function () { st.lim = 50; render(); });
-  $("xReset").onclick = function () { ["xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).value = ""; }); $("xFind").value = ""; st.lim = 50; render(); };
+  $("xReset").onclick = function () { ["xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).value = ""; }); $("xFind").value = ""; st.lim = 50; render(); };
   $("xMore").onclick = function () { st.lim += 50; render(); };
   $("xLvlCad").onclick = function () { st.lvl = "cad"; $("xLvlCad").setAttribute("aria-pressed", true); $("xLvlSku").setAttribute("aria-pressed", false); render(); };
   $("xLvlSku").onclick = function () { st.lvl = "sku"; $("xLvlSku").setAttribute("aria-pressed", true); $("xLvlCad").setAttribute("aria-pressed", false); render(); };
@@ -577,7 +612,7 @@
   });
   ["xHeat", "xBars"].forEach(function (id) { $(id).addEventListener("mouseleave", function () { tip.hidden = true; }); });
 
-  $("xPie").innerHTML = "Exactitud por SKU = 1 − |Real − FCST| / FCST, entre 0 % y 100 %, calculada en cada cruce cadena × SKU. El total de una cadena o categoría es el promedio ponderado por el peso de cada SKU en el FCST (equivale a 1 − Σ error / Σ FCST). Los SKU vendidos sin FCST no ponderan; se informan aparte.<br>FCST: columnas S" + X.semanas.map(function (s) { return s.sem; }).join(" y S") + " de la hoja FCST. Real: export de la base, solo Grupo Lácteos y Jugos.";
+  $("xPie").innerHTML = "Exactitud por SKU = 1 − |Real − FCST| / FCST, entre 0 % y 100 %, calculada en cada cruce cadena × SKU. El total de una cadena o categoría es el promedio ponderado por el peso de cada SKU en el FCST (equivale a 1 − Σ error / Σ FCST). Los SKU vendidos sin FCST no ponderan; se informan aparte.<br>FCST: S" + X.semanas.map(function (s) { return s.sem; }).join(" y S") + " de tus archivos. Real: export de la base. En cada semana entran solo los grupos que tienen FCST esa semana (la S39 solo tiene Lácteos y Jugos).";
   render();
 })();
 </script>
