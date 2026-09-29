@@ -18,4 +18,4 @@ Pestaña "Exactitud" del dashboard y hojas "Exactitud cadena" / "Exactitud SKU" 
 
 - Por cadena × SKU: `1 − min(|Real − FCST|, FCST) / FCST` (entre 0 y 100 %).
 - Totales (cadena, categoría, total): ponderados por el peso del SKU en el FCST, equivale a `1 − Σ error / Σ FCST`.
-- Real = Sell In. Si la semana todavía no tiene Sell In (semana en curso), el Excel usa Venta Real y el dashboard avisa.
+- Semana cerrada (con Sell In): se mide contra Sell In. Semana en curso y la siguiente: contra Solicitado (las entregas se hacen durante la semana).

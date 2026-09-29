@@ -123,11 +123,11 @@ def exactitud_datos(fc, b, anio):
 
 def exactitud_excel(ex, por=None):
     """Exactitud = 1 - min(|Real - FCST|, FCST) / FCST por cadena x SKU; los totales ponderan por FCST.
-    Real = Sell In si la semana ya lo tiene, si no Venta Real."""
+    Real = Sell In si la semana está cerrada (ya tiene Sell In); si no, Solicitado."""
     d = pd.DataFrame(ex["filas"], columns=ex["cols"])
     con_si = {s["sem"]: s["sellin"] > 0 for s in ex["semanas"]}
-    d["Real usado"] = d["sem"].map(lambda s: "Sell In" if con_si[s] else "Venta Real (semana en curso)")
-    d["Real"] = d["sellin"].where(d["sem"].map(con_si), d["real"])
+    d["Real usado"] = d["sem"].map(lambda s: "Sell In (cerrada)" if con_si[s] else "Solicitado (en curso)")
+    d["Real"] = d["sellin"].where(d["sem"].map(con_si), d["solic"])
     d["Error"] = (d["Real"] - d["fcst"]).abs().clip(upper=d["fcst"]).where(d["fcst"] > 0, 0)
     if por:
         g = d.groupby(["sem", "Real usado", "grupo", "cadena"], as_index=False)[["fcst", "Real", "Error"]].sum()
@@ -184,6 +184,10 @@ def main():
                          "filas": [[gr, cad, r.FCST, r.Solicitado] for (gr, cad), r in g.iterrows()]})
 
     ex = exactitud_datos(fc, b, a.anio)
+    # semanas cerradas + la actual y la siguiente
+    ex["semanas"] = [s for s in ex["semanas"] if s["sellin"] > 0 or s["sem"] in (a.semana, a.semana + 1)]
+    semanas_ok = {s["sem"] for s in ex["semanas"]}
+    ex["filas"] = [f for f in ex["filas"] if f[0] in semanas_ok]
     r = resumen_cadena(d)
     os.makedirs(os.path.join(ROOT, "reportes"), exist_ok=True)
     xlsx = os.path.join(ROOT, "reportes", f"Avance_S{a.semana}.xlsx")

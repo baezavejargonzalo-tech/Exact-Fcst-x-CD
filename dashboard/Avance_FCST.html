@@ -175,8 +175,6 @@
   <div class="view" id="vExact" role="tabpanel" aria-labelledby="tabExact">
     <section class="filters" aria-label="Filtros">
       <div class="field"><label for="xSem">Semana</label><select id="xSem"></select></div>
-      <div class="field"><label for="xMed">Real</label>
-        <select id="xMed"><option value="sellin">Sell In</option><option value="real">Venta Real</option><option value="solic">Solicitado</option></select></div>
       <div class="field"><label for="xGrupo">Grupo</label><select id="xGrupo"></select></div>
       <div class="field"><label for="xCad">Cadena</label><select id="xCad"></select></div>
       <div class="field"><label for="xCat">Categoría</label><select id="xCat"></select></div>
@@ -191,7 +189,7 @@
 
     <section class="panel" aria-labelledby="hXBars">
       <h2 id="hXBars">Exactitud por cadena</h2>
-      <p class="sub">Exactitud ponderada por el peso de cada SKU en el FCST. El texto de la derecha es Sell In / FCST: sobre 100 % se vendió más de lo proyectado. Toca una cadena para filtrar.</p>
+      <p class="sub">Exactitud ponderada por el peso de cada SKU en el FCST. El texto de la derecha es real / FCST (Sell In en semana cerrada, Solicitado en semana en curso): sobre 100 % es más de lo proyectado. Toca una cadena para filtrar.</p>
       <div class="bars" id="xBars"></div>
     </section>
 
@@ -452,13 +450,18 @@
   }
   function uniq(k) { var s = {}; rows.forEach(function (r) { s[r[k]] = 1; }); return Object.keys(s).sort(); }
   var ultimaCerrada = X.semanas.filter(function (s) { return s.sellin > 0; }).map(function (s) { return s.sem; }).pop();
-  opts("xSem", X.semanas.map(function (s) { return [s.sem, "S" + s.sem + (s.sellin > 0 ? " · cerrada" : " · en curso")]; }).reverse());
+  // Semana cerrada (con Sell In) se mide contra Sell In. Semana en curso y la siguiente se miden contra Solicitado.
+  var semAct = D.semana;
+  function medida(sem) { return semInfo[sem] && semInfo[sem].sellin > 0 ? "sellin" : "solic"; }
+  function estadoSem(sem) { return medida(sem) === "sellin" ? "cerrada · vs Sell In" : sem === semAct ? "en curso · vs Solicitado" : "próxima · vs Solicitado"; }
+  X.semanas = X.semanas.filter(function (s) { return s.sellin > 0 || s.sem === semAct || s.sem === semAct + 1; });
+  opts("xSem", X.semanas.map(function (s) { return [s.sem, "S" + s.sem + " · " + estadoSem(s.sem)]; }).reverse());
   opts("xGrupo", uniq("grupo").map(function (v) { return [v, nombre(v.replace(/^GRUPO /, ""))]; }), "Todos");
   opts("xCad", uniq("cad").map(function (v) { return [v, nombre(v)]; }), "Todas");
   opts("xCat", uniq("cat").map(function (v) { return [v, cap(v)]; }), "Todas");
   opts("xMarca", uniq("marca").map(function (v) { return [v, v]; }), "Todas");
   opts("xFoco", uniq("foco").map(function (v) { return [v, cap(v)]; }), "Todos");
-  $("xSem").value = ultimaCerrada || X.semanas[X.semanas.length - 1].sem;
+  $("xSem").value = X.semanas.some(function (s) { return s.sem === semAct; }) ? semAct : (ultimaCerrada || X.semanas[X.semanas.length - 1].sem);
 
   var st = { lvl: "cad", sort: "err", dir: -1, lim: 50 };
 
@@ -493,22 +496,19 @@
   }
 
   function render() {
-    var m = $("xMed").value, sem = +$("xSem").value, info = semInfo[sem];
+    var sem = +$("xSem").value, m = medida(sem);
     ["xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).classList.toggle("on", !!$(id).value); });
     var aviso = $("xAviso");
-    if (m === "sellin" && info && !(info.sellin > 0)) {
-      aviso.hidden = false;
-      aviso.innerHTML = "<b>La S" + sem + " todavía no tiene Sell In.</b> La base trae Sell In en 0 para esta semana, así que la exactitud saldría 0 %. Cambia a Venta Real o Solicitado para ver cómo va, sabiendo que la semana no está cerrada.";
-    } else if (info && !(info.sellin > 0)) {
-      aviso.hidden = false;
-      aviso.innerHTML = "<b>S" + sem + " está en curso.</b> La exactitud contra " + MED[m] + " es parcial y va a subir a medida que entren los pedidos de la semana.";
-    } else aviso.hidden = true;
+    aviso.hidden = false;
+    aviso.classList.toggle("warn", m !== "sellin");
+    aviso.innerHTML = m === "sellin" ? "<b>S" + sem + " cerrada: se mide contra Sell In.</b>" :
+      "<b>S" + sem + (sem === semAct ? " en curso" : ", próxima semana") + ": se mide contra Solicitado.</b> Las entregas se hacen durante la semana, así que el Sell In todavía no está. Cuando la semana cierre se mide contra Sell In.";
 
     var L = filtered();
     var A = agg(L, m);
     $("xKpis").innerHTML =
       kpi(p(A.ex), "Exactitud ponderada S" + sem, '<div class="meter"><i style="width:' + Math.max(0, Math.min(100, (A.ex || 0) * 100)) + '%"></i></div>') +
-      kpi(p(A.ratio), MED[m] + " / FCST", '<span class="x">' + (A.ratio > 1 ? "Se vendió más de lo proyectado" : A.ratio < 1 ? "Se vendió menos de lo proyectado" : "") + "</span>") +
+      kpi(p(A.ratio), MED[m] + " / FCST", '<span class="x">' + (A.ratio > 1 ? "Por sobre lo proyectado" : A.ratio < 1 ? "Bajo lo proyectado" : "") + "</span>") +
       kpi(t(A.f) + " t", "FCST", '<span class="x" style="color:var(--muted)">' + t(A.r) + " t de " + MED[m] + "</span>") +
       kpi(t(A.e) + " t", "Error absoluto", '<span class="x" style="color:var(--muted)">' + t(A.sinF) + " t vendidas sin FCST</span>");
     function kpi(v, k, x) { return '<div class="kpi"><div class="v">' + v + '</div><div class="k">' + k + "</div>" + x + "</div>"; }
@@ -574,7 +574,7 @@
   }
   var barData = [];
 
-  ["xSem", "xMed", "xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).addEventListener("change", function () { st.lim = 50; render(); }); });
+  ["xSem", "xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).addEventListener("change", function () { st.lim = 50; render(); }); });
   $("xFind").addEventListener("input", function () { st.lim = 50; render(); });
   $("xReset").onclick = function () { ["xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).value = ""; }); $("xFind").value = ""; st.lim = 50; render(); };
   $("xMore").onclick = function () { st.lim += 50; render(); };
@@ -600,13 +600,13 @@
   function row(k, v) { return '<div class="r"><span>' + k + "</span><b>" + v + "</b></div>"; }
   $("xHeat").addEventListener("mousemove", function (e) {
     var c = e.target.closest("td[data-tip]"); if (!c) { tip.hidden = true; return; }
-    var v = c.dataset.tip.split("|"), m = MED[$("xMed").value];
+    var v = c.dataset.tip.split("|"), m = MED[medida(+$("xSem").value)];
     tip.innerHTML = '<div class="h">' + esc(v[0]) + "</div>" + row("Exactitud", v[1]) + row("FCST", v[2] + " t") + row(m, v[3] + " t") + row("Error", v[4] + " t");
     place(e);
   });
   $("xBars").addEventListener("mousemove", function (e) {
     var b = e.target.closest(".bar-track.x"); if (!b) { tip.hidden = true; return; }
-    var a = barData.filter(function (x) { return x.k === b.dataset.k; })[0], m = MED[$("xMed").value];
+    var a = barData.filter(function (x) { return x.k === b.dataset.k; })[0], m = MED[medida(+$("xSem").value)];
     tip.innerHTML = '<div class="h">' + esc(nombre(a.k)) + "</div>" + row("Exactitud", p(a.ex)) + row("FCST", t(a.f) + " t") + row(m, t(a.r) + " t") + row(m + " / FCST", p(a.ratio)) + row("Error absoluto", t(a.e) + " t");
     place(e);
   });
