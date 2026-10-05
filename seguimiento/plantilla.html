@@ -451,7 +451,7 @@
   function uniq(k) { var s = {}; rows.forEach(function (r) { s[r[k]] = 1; }); return Object.keys(s).sort(); }
   var ultimaCerrada = X.semanas.filter(function (s) { return s.sellin > 0; }).map(function (s) { return s.sem; }).pop();
   // Semana cerrada (con Sell In) se mide contra Sell In. Semana en curso y la siguiente se miden contra Solicitado.
-  var semAct = D.semana;
+  var semAct = X.sem_actual || D.semana;
   function medida(sem) { return semInfo[sem] && semInfo[sem].sellin > 0 ? "sellin" : "solic"; }
   function estadoSem(sem) { return medida(sem) === "sellin" ? "cerrada · vs Sell In" : sem === semAct ? "en curso · vs Solicitado" : "próxima · vs Solicitado"; }
   X.semanas = X.semanas.filter(function (s) { return s.sellin > 0 || s.sem === semAct || s.sem === semAct + 1; });
@@ -496,12 +496,14 @@
   }
 
   function render() {
-    var sem = +$("xSem").value, m = medida(sem);
+    var sem = +$("xSem").value, m = medida(sem), info = semInfo[sem];
     ["xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).classList.toggle("on", !!$(id).value); });
     var aviso = $("xAviso");
     aviso.hidden = false;
-    aviso.classList.toggle("warn", m !== "sellin");
-    aviso.innerHTML = m === "sellin" ? "<b>S" + sem + " cerrada: se mide contra Sell In.</b>" :
+    var inc = m === "sellin" && info.real > 0 && info.sellin < 0.9 * info.real;
+    aviso.classList.toggle("warn", inc || m !== "sellin");
+    aviso.innerHTML = m === "sellin" ? "<b>S" + sem + " cerrada: se mide contra Sell In.</b>" +
+      (inc ? " Ojo: el Sell In de esta semana en la base (" + t(info.sellin) + " t) es solo el " + p(info.sellin / info.real) + " de la Venta Real (" + t(info.real) + " t). Parece incompleto, así que la exactitud sale más baja de lo que es. Contra Solicitado daría " + p(agg(filtered(), "solic").ex) + "." : "") :
       "<b>S" + sem + (sem === semAct ? " en curso" : ", próxima semana") + ": se mide contra Solicitado.</b> Las entregas se hacen durante la semana, así que el Sell In todavía no está. Cuando la semana cierre se mide contra Sell In.";
 
     var L = filtered();

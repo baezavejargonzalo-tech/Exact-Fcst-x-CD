@@ -103,21 +103,39 @@ def cruzar(fc, b, sem):
 
 
 def exactitud_datos(fc, b, anio):
+    """Filas semana x cadena x SKU. Las semanas cerradas (con Sell In) se guardan en data/exactitud/
+    para no perderlas cuando la base ya no las traiga."""
     attrs = b.groupby("SKU")[list(ATRIBUTOS)].first().rename(columns=ATRIBUTOS)
-    filas, semanas, nombres = [], [], {}
+    carpeta = os.path.join(ROOT, "data", "exactitud")
+    os.makedirs(carpeta, exist_ok=True)
+    semanas = {}
     for sem in sorted(set(b["sem"]) & set(fc["sem"])):
         d = cruzar(fc, b, sem)
         if d.empty:
             continue
-        semanas.append({"sem": int(sem), "sellin": round(float(d["Venta Sell IN"].sum()), 3)})
+        filas, skus = [], {}
         for r in d.itertuples(index=False):
-            nombres.setdefault(int(r.SKU), r.Producto)
             filas.append([int(sem), r.Cadena, int(r.SKU), r.FCST, r[5], r[6], r[7], r[8], r.Grupo])
-    skus = {}
-    for k, n in nombres.items():
-        a = attrs.loc[k].to_dict() if k in attrs.index else {}
-        skus[k] = {"n": n if isinstance(n, str) else "", **{c: (None if pd.isna(v) or v == "-" else v) for c, v in a.items()}}
-    return {"anio": anio, "semanas": semanas,
+            a = attrs.loc[r.SKU].to_dict() if r.SKU in attrs.index else {}
+            skus[str(int(r.SKU))] = {"n": r.Producto if isinstance(r.Producto, str) else "",
+                                     **{c: (None if pd.isna(v) or v == "-" else v) for c, v in a.items()}}
+        info = {"sem": int(sem), "sellin": round(float(d["Venta Sell IN"].sum()), 3),
+                "real": round(float(d["Venta Real"].sum()), 3)}
+        semanas[int(sem)] = {"info": info, "filas": filas, "skus": skus}
+        if info["sellin"] > 0:
+            with open(os.path.join(carpeta, f"S{sem}.json"), "w", encoding="utf-8") as fh:
+                json.dump(semanas[int(sem)], fh, ensure_ascii=False)
+    for p in glob.glob(os.path.join(carpeta, "S*.json")):
+        sem = int(os.path.basename(p)[1:-5])
+        if sem not in semanas:
+            semanas[sem] = json.load(open(p, encoding="utf-8"))
+    filas, skus, info = [], {}, []
+    for sem in sorted(semanas):
+        info.append(semanas[sem]["info"])
+        filas += semanas[sem]["filas"]
+        for k, v in semanas[sem]["skus"].items():
+            skus.setdefault(int(k), v)
+    return {"anio": anio, "semanas": info,
             "cols": ["sem", "cadena", "sku", "fcst", "sellin", "real", "solic", "queb", "grupo"], "filas": filas, "skus": skus}
 
 
@@ -184,8 +202,10 @@ def main():
                          "filas": [[gr, cad, r.FCST, r.Solicitado] for (gr, cad), r in g.iterrows()]})
 
     ex = exactitud_datos(fc, b, a.anio)
-    # semanas cerradas + la actual y la siguiente
-    ex["semanas"] = [s for s in ex["semanas"] if s["sellin"] > 0 or s["sem"] in (a.semana, a.semana + 1)]
+    # semanas cerradas + la en curso (según la fecha del corte) y la siguiente
+    sem_hoy = dt.date.fromisoformat(a.fecha).isocalendar()[1]
+    ex["sem_actual"] = sem_hoy
+    ex["semanas"] = [s for s in ex["semanas"] if s["sellin"] > 0 or s["sem"] in (sem_hoy, sem_hoy + 1)]
     semanas_ok = {s["sem"] for s in ex["semanas"]}
     ex["filas"] = [f for f in ex["filas"] if f[0] in semanas_ok]
     r = resumen_cadena(d)
