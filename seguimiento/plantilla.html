@@ -151,6 +151,7 @@
   table.heat td { font-weight: 700; cursor: pointer; }
   table.heat td.na { color: var(--muted); background: var(--surface-2); cursor: default; font-weight: 400; }
   table.heat td.sel { outline: 2px solid var(--ink); outline-offset: -2px; }
+  td.sub { white-space: normal; min-width: 130px; max-width: 200px; color: var(--muted); font-size: 12px; }
   th.sort { cursor: pointer; user-select: none; }
   th.sort:hover { color: var(--ink); }
   th.sort[aria-sort="ascending"]::after { content: " ▲"; font-size: 9px; }
@@ -178,6 +179,7 @@
       <div class="field"><label for="xGrupo">Grupo</label><select id="xGrupo"></select></div>
       <div class="field"><label for="xCad">Cadena</label><select id="xCad"></select></div>
       <div class="field"><label for="xCat">Categoría</label><select id="xCat"></select></div>
+      <div class="field"><label for="xSub">Subcategoría</label><select id="xSub"></select></div>
       <div class="field"><label for="xMarca">Marca</label><select id="xMarca"></select></div>
       <div class="field"><label for="xFoco">Foco</label><select id="xFoco"></select></div>
       <div class="field grow"><label for="xFind">Buscar SKU o producto</label><input type="search" id="xFind" placeholder="Ej. 30000522 o LONCO BASE" autocomplete="off"></div>
@@ -200,6 +202,13 @@
       <div class="tbl-wrap"><table class="heat" id="xHeat"></table></div>
     </section>
 
+    <section class="panel" aria-labelledby="hXSub">
+      <h2 id="hXSub">Exactitud por subcategoría</h2>
+      <p class="sub">Con los filtros de arriba (cadena, grupo, etc.). Toca una subcategoría para filtrar todo por ella; toca un encabezado para ordenar.</p>
+      <div class="tbl-wrap"><table id="xSubTbl"></table></div>
+      <button class="ghost" id="xSubMore" type="button" hidden>Ver todas</button>
+    </section>
+
     <section class="panel" aria-labelledby="hXSku">
       <div class="row-head">
         <h2 id="hXSku">Exactitud por SKU</h2>
@@ -217,6 +226,7 @@
   <div class="view" id="vAvance" role="tabpanel" aria-labelledby="tabAvance" hidden>
   <section class="filters" aria-label="Filtros del avance">
     <div class="field"><label for="aGrupo">Grupo</label><select id="aGrupo"></select></div>
+    <div class="field"><label for="aSub">Subcategoría</label><select id="aSub"></select></div>
     <p class="lede" id="lede" style="flex:1 1 320px;font-size:13px"></p>
   </section>
   <section class="kpis" id="kpis" aria-label="Resumen de la semana"></section>
@@ -288,7 +298,13 @@
   function render() {
     var g = $("aGrupo").value;
     $("aGrupo").classList.toggle("on", !!g);
-    skus = ALL.filter(function (s) { return !g || s.Grupo === g; });
+    var sb = $("aSub").value;
+    $("aSub").classList.toggle("on", !!sb);
+    var subs = Array.from(new Set(ALL.filter(function (s) { return !g || s.Grupo === g; }).map(function (s) { return s.Subcategoria; }))).sort();
+    if (sb && subs.indexOf(sb) < 0) sb = "";
+    $("aSub").innerHTML = '<option value="">Todas</option>' + subs.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + "</option>"; }).join("");
+    $("aSub").value = sb;
+    skus = ALL.filter(function (s) { return (!g || s.Grupo === g) && (!sb || s.Subcategoria === sb); });
     var m = new Map();
     skus.forEach(function (s) {
       var c = m.get(s.Cadena); if (!c) { c = { Cadena: s.Cadena, FCST: 0, Solicitado: 0, "Venta Real": 0, Quebrados: 0 }; m.set(s.Cadena, c); }
@@ -391,10 +407,10 @@
 
   function detalle(cad) {
     var l = skus.filter(function (s) { return s.Cadena === cad; }).sort(function (a, b) { return Math.abs(b.Solicitado - b.FCST) - Math.abs(a.Solicitado - a.FCST); });
-    return '<table class="sku"><thead><tr><th class="l">SKU</th><th class="l">Producto</th><th>FCST</th><th>Solicitado</th><th>Dif.</th><th>Avance</th><th>Quebrado</th></tr></thead><tbody>' +
+    return '<table class="sku"><thead><tr><th class="l">Subcategoría</th><th class="l">SKU</th><th class="l">Producto</th><th>FCST</th><th>Solicitado</th><th>Dif.</th><th>Avance</th><th>Quebrado</th></tr></thead><tbody>' +
       l.map(function (s) {
         var d = s.Solicitado - s.FCST; if (Math.abs(d) < 0.05) d = 0;
-        return '<tr><td class="l">' + s.SKU + '</td><td class="prod">' + esc(s.Producto) + "</td><td>" + t(s.FCST) + "</td><td>" + t(s.Solicitado) + '</td><td class="' + (d > 0 ? "pos" : "neg") + '">' + (d > 0 ? "+" : "") + t(d) +
+        return '<tr><td class="l sub">' + esc(s.Subcategoria) + '</td><td class="l">' + s.SKU + '</td><td class="prod">' + esc(s.Producto) + "</td><td>" + t(s.FCST) + "</td><td>" + t(s.Solicitado) + '</td><td class="' + (d > 0 ? "pos" : "neg") + '">' + (d > 0 ? "+" : "") + t(d) +
           "</td><td>" + (s.FCST > 0 ? p(s.Solicitado / s.FCST) : "sin FCST") + "</td><td>" + (s.Quebrados > 0 ? t(s.Quebrados) : "–") + "</td></tr>";
       }).join("") + "</tbody></table>";
   }
@@ -407,6 +423,7 @@
   $("tbl").addEventListener("click", function (e) { var tr = e.target.closest("tr.cad"); if (tr) toggle(tr); });
   $("tbl").addEventListener("keydown", function (e) { var tr = e.target.closest("tr.cad"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(tr); } });
   $("aGrupo").addEventListener("change", render);
+  $("aSub").addEventListener("change", render);
   render();
 })();
 
@@ -441,7 +458,7 @@
   var rows = X.filas.map(function (r) {
     var s = X.skus[r[2]] || {};
     return { sem: r[0], cad: r[1], sku: r[2], f: r[3], sellin: r[4], real: r[5], solic: r[6], queb: r[7],
-      grupo: r[8] || "SIN GRUPO", n: s.n || "", cat: s.cat || "Sin categoría", marca: s.marca || "Sin marca", foco: s.foco || "Sin foco" };
+      grupo: r[8] || "SIN GRUPO", sub: s.sub || "SIN SUBCATEGORÍA", n: s.n || "", cat: s.cat || "Sin categoría", marca: s.marca || "Sin marca", foco: s.foco || "Sin foco" };
   });
   var semInfo = {}; X.semanas.forEach(function (s) { semInfo[s.sem] = s; });
 
@@ -459,11 +476,12 @@
   opts("xGrupo", uniq("grupo").map(function (v) { return [v, nombre(v.replace(/^GRUPO /, ""))]; }), "Todos");
   opts("xCad", uniq("cad").map(function (v) { return [v, nombre(v)]; }), "Todas");
   opts("xCat", uniq("cat").map(function (v) { return [v, cap(v)]; }), "Todas");
+  opts("xSub", uniq("sub").map(function (v) { return [v, v]; }), "Todas");
   opts("xMarca", uniq("marca").map(function (v) { return [v, v]; }), "Todas");
   opts("xFoco", uniq("foco").map(function (v) { return [v, cap(v)]; }), "Todos");
   $("xSem").value = X.semanas.some(function (s) { return s.sem === semAct; }) ? semAct : (ultimaCerrada || X.semanas[X.semanas.length - 1].sem);
 
-  var st = { lvl: "cad", sort: "err", dir: -1, lim: 50 };
+  var st = { lvl: "cad", sort: "err", dir: -1, lim: 50, ssort: "f", sdir: -1, slim: 15 };
 
   // exactitud de un SKU (o SKU×cadena): 1 - |real - fcst| / fcst, entre 0 y 1. Sin FCST no pondera.
   function agg(list, m) {
@@ -480,10 +498,10 @@
   function groupBy(list, keyFn) { var g = new Map(); list.forEach(function (x) { var k = keyFn(x); if (!g.has(k)) g.set(k, []); g.get(k).push(x); }); return g; }
 
   function filtered(skip) {
-    var sem = +$("xSem").value, grp = $("xGrupo").value, cad = $("xCad").value, cat = $("xCat").value, marca = $("xMarca").value, foco = $("xFoco").value;
+    var sem = +$("xSem").value, grp = $("xGrupo").value, sub = $("xSub").value, cad = $("xCad").value, cat = $("xCat").value, marca = $("xMarca").value, foco = $("xFoco").value;
     var q = $("xFind").value.trim().toUpperCase();
     return rows.filter(function (r) {
-      return r.sem === sem && (!grp || r.grupo === grp) && (skip === "cad" || !cad || r.cad === cad) && (skip === "cat" || !cat || r.cat === cat) &&
+      return r.sem === sem && (!grp || r.grupo === grp) && (skip === "sub" || !sub || r.sub === sub) && (skip === "cad" || !cad || r.cad === cad) && (skip === "cat" || !cat || r.cat === cat) &&
         (!marca || r.marca === marca) && (!foco || r.foco === foco) &&
         (!q || String(r.sku).indexOf(q) >= 0 || r.n.toUpperCase().indexOf(q) >= 0);
     });
@@ -497,7 +515,7 @@
 
   function render() {
     var sem = +$("xSem").value, m = medida(sem), info = semInfo[sem];
-    ["xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).classList.toggle("on", !!$(id).value); });
+    ["xGrupo", "xCad", "xCat", "xSub", "xMarca", "xFoco"].forEach(function (id) { $(id).classList.toggle("on", !!$(id).value); });
     var aviso = $("xAviso");
     aviso.hidden = false;
     var inc = m === "sellin" && info.real > 0 && info.sellin < 0.9 * info.real;
@@ -548,25 +566,43 @@
       '<td style="' + heatColor(agg(HL.filter(function (r) { return cads.indexOf(r.cad) >= 0; }), m).ex) + '" data-cad="" data-cat="">' + p(agg(HL.filter(function (r) { return cads.indexOf(r.cad) >= 0; }), m).ex) + "</td></tr></tbody>";
     $("xHeat").innerHTML = cats.length ? h : '<tbody><tr><td class="na">No hay datos para estos filtros.</td></tr></tbody>';
 
+    // tabla por subcategoría
+    var SL = filtered("sub");
+    var AS = agg(SL, m);
+    var subs = Array.from(groupBy(SL, function (r) { return r.sub; })).map(function (e) { var a = agg(e[1], m); a.k = e[0]; a.n = new Set(e[1].map(function (r) { return r.sku; })).size; a.aporte = AS.f > 0 ? a.e / AS.f : 0; return a; })
+      .filter(function (a) { return a.f > 0 || a.r > 0; });
+    var sk = { f: "f", r: "r", ex: "ex", ratio: "ratio", err: "aporte", k: "k" }[st.ssort];
+    subs.sort(function (a, b) { var x = a[sk], y = b[sk]; if (x === null) return 1; if (y === null) return -1; return (typeof x === "string" ? x.localeCompare(y) : x - y) * st.sdir; });
+    var subSel = $("xSub").value;
+    var scols = [["k", "Subcategoría", "l"], ["n", "SKU"], ["f", "FCST (t)"], ["r", MED[m] + " (t)"], ["ratio", MED[m] + "/FCST"], ["ex", "Exactitud"], ["err", "Resta"]];
+    $("xSubTbl").innerHTML = "<thead><tr>" + scols.map(function (c) { return '<th class="' + (c[0] === "n" ? "" : "sort ") + (c[2] || "") + '" data-s="' + c[0] + '"' + (st.ssort === c[0] ? ' aria-sort="' + (st.sdir > 0 ? "ascending" : "descending") + '"' : "") + ">" + esc(c[1]) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      subs.slice(0, st.slim).map(function (a) {
+        var rc = a.ratio === null ? "" : a.ratio > 1.2 ? "sesgo-alto" : a.ratio < 0.8 ? "sesgo-bajo" : "";
+        return '<tr class="cad" tabindex="0" data-sub="' + esc(a.k) + '"' + (subSel === a.k ? ' style="outline:2px solid var(--accent)"' : "") + '><td class="l">' + esc(a.k) + "</td><td>" + a.n + "</td><td>" + t(a.f) + "</td><td>" + t(a.r) + '</td><td class="' + rc + '">' + (a.f > 0 ? p(a.ratio) : "sin FCST") +
+          '</td><td><span class="ex">' + p(a.ex) + '<i><b style="width:' + ((a.ex || 0) * 100) + '%"></b></i></span></td><td>' + (a.aporte > 0 ? "−" + nf1.format(a.aporte * 100) + " pts" : "–") + "</td></tr>";
+      }).join("") + "</tbody>";
+    $("xSubMore").hidden = subs.length <= st.slim;
+    $("xSubMore").textContent = "Ver las " + subs.length + " subcategorías";
+
     // tabla de SKU
     var items;
-    if (st.lvl === "cad") items = L.map(function (r) { var a = agg([r], m); a.cad = r.cad; a.sku = r.sku; a.nm = r.n; a.cat = r.cat; return a; });
-    else items = Array.from(groupBy(L, function (r) { return r.sku; })).map(function (e) { var a = agg(e[1], m); a.cad = e[1].length + " cadenas"; a.sku = e[0]; a.nm = e[1][0].n; a.cat = e[1][0].cat; return a; });
+    if (st.lvl === "cad") items = L.map(function (r) { var a = agg([r], m); a.cad = r.cad; a.sku = r.sku; a.nm = r.n; a.cat = r.cat; a.sub = r.sub; return a; });
+    else items = Array.from(groupBy(L, function (r) { return r.sku; })).map(function (e) { var a = agg(e[1], m); a.cad = e[1].length + " cadenas"; a.sku = e[0]; a.nm = e[1][0].n; a.cat = e[1][0].cat; a.sub = e[1][0].sub; return a; });
     items.forEach(function (a) { a.peso = A.f > 0 ? a.f / A.f : 0; a.aporte = A.f > 0 ? a.e / A.f : 0; });
-    var key = { err: "e", ex: "ex", f: "f", r: "r", ratio: "ratio", peso: "peso", sku: "sku", cad: "cad", nm: "nm" }[st.sort];
+    var key = { err: "e", ex: "ex", f: "f", r: "r", ratio: "ratio", peso: "peso", sku: "sku", cad: "cad", nm: "nm", sub: "sub" }[st.sort];
     items.sort(function (a, b) {
       var x = a[key], y = b[key];
       if (x === null) return 1; if (y === null) return -1;
       return (typeof x === "string" ? x.localeCompare(y) : x - y) * st.dir;
     });
-    $("xSkuSub").textContent = items.length + " filas. Ordenadas por " + ({ err: "error absoluto", ex: "exactitud", f: "FCST", r: MED[m], ratio: MED[m] + " / FCST", peso: "peso", sku: "SKU", cad: "cadena", nm: "producto" }[st.sort]) +
+    $("xSkuSub").textContent = items.length + " filas. Ordenadas por " + ({ err: "error absoluto", ex: "exactitud", f: "FCST", r: MED[m], ratio: MED[m] + " / FCST", peso: "peso", sku: "SKU", cad: "cadena", nm: "producto", sub: "subcategoría" }[st.sort]) +
       ". “Resta” son los puntos de exactitud que ese SKU le quita al total filtrado. Toca un encabezado para ordenar.";
-    var cols = [["cad", "Cadena", "l"], ["sku", "SKU", "l"], ["nm", "Producto", "l"], ["f", "FCST (t)"], ["r", MED[m] + " (t)"], ["ratio", MED[m] + "/FCST"], ["ex", "Exactitud"], ["peso", "Peso"], ["err", "Resta"]];
+    var cols = [["cad", "Cadena", "l"], ["sub", "Subcategoría", "l"], ["sku", "SKU", "l"], ["nm", "Producto", "l"], ["f", "FCST (t)"], ["r", MED[m] + " (t)"], ["ratio", MED[m] + "/FCST"], ["ex", "Exactitud"], ["peso", "Peso"], ["err", "Resta"]];
     if (st.lvl === "sku") cols[0] = ["cad", "Cadenas", "l"];
     var th = "<thead><tr>" + cols.map(function (c) { return '<th class="sort ' + (c[2] || "") + '" data-s="' + c[0] + '"' + (st.sort === c[0] ? ' aria-sort="' + (st.dir > 0 ? "ascending" : "descending") + '"' : "") + ">" + esc(c[1]) + "</th>"; }).join("") + "</tr></thead>";
     var tb = items.slice(0, st.lim).map(function (a) {
       var rc = a.ratio === null ? "" : a.ratio > 1.2 ? "sesgo-alto" : a.ratio < 0.8 ? "sesgo-bajo" : "";
-      return "<tr><td class=\"l\">" + esc(st.lvl === "cad" ? nombre(a.cad) : a.cad) + '</td><td class="l">' + a.sku + '</td><td class="l" style="white-space:normal;min-width:200px">' + esc(a.nm) + "</td><td>" + t(a.f) + "</td><td>" + t(a.r) +
+      return "<tr><td class=\"l\">" + esc(st.lvl === "cad" ? nombre(a.cad) : a.cad) + '</td><td class="l sub">' + esc(a.sub) + '</td><td class="l">' + a.sku + '</td><td class="l" style="white-space:normal;min-width:200px">' + esc(a.nm) + "</td><td>" + t(a.f) + "</td><td>" + t(a.r) +
         '</td><td class="' + rc + '">' + (a.f > 0 ? p(a.ratio) : "sin FCST") + '</td><td><span class="ex">' + p(a.ex) + '<i><b style="width:' + ((a.ex || 0) * 100) + '%"></b></i></span></td><td>' + p(a.peso).replace(" %", "") + (a.peso ? " %" : "") +
         "</td><td>" + (a.aporte > 0 ? "−" + nf1.format(a.aporte * 100) + " pts" : "–") + "</td></tr>";
     }).join("");
@@ -576,16 +612,24 @@
   }
   var barData = [];
 
-  ["xSem", "xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).addEventListener("change", function () { st.lim = 50; render(); }); });
+  ["xSem", "xGrupo", "xCad", "xCat", "xSub", "xMarca", "xFoco"].forEach(function (id) { $(id).addEventListener("change", function () { st.lim = 50; render(); }); });
   $("xFind").addEventListener("input", function () { st.lim = 50; render(); });
-  $("xReset").onclick = function () { ["xGrupo", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).value = ""; }); $("xFind").value = ""; st.lim = 50; render(); };
+  $("xReset").onclick = function () { ["xGrupo", "xSub", "xCad", "xCat", "xMarca", "xFoco"].forEach(function (id) { $(id).value = ""; }); $("xFind").value = ""; st.lim = 50; render(); };
   $("xMore").onclick = function () { st.lim += 50; render(); };
+  $("xSubMore").onclick = function () { st.slim = 1e9; render(); };
+  function pickSub(k) { $("xSub").value = $("xSub").value === k ? "" : k; st.lim = 50; render(); }
+  $("xSubTbl").addEventListener("click", function (e) {
+    var h = e.target.closest("th.sort");
+    if (h) { var s = h.dataset.s; if (st.ssort === s) st.sdir = -st.sdir; else { st.ssort = s; st.sdir = s === "k" ? 1 : -1; } render(); return; }
+    var tr = e.target.closest("tr[data-sub]"); if (tr) pickSub(tr.dataset.sub);
+  });
+  $("xSubTbl").addEventListener("keydown", function (e) { var tr = e.target.closest("tr[data-sub]"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pickSub(tr.dataset.sub); } });
   $("xLvlCad").onclick = function () { st.lvl = "cad"; $("xLvlCad").setAttribute("aria-pressed", true); $("xLvlSku").setAttribute("aria-pressed", false); render(); };
   $("xLvlSku").onclick = function () { st.lvl = "sku"; $("xLvlSku").setAttribute("aria-pressed", true); $("xLvlCad").setAttribute("aria-pressed", false); render(); };
   $("xTbl").addEventListener("click", function (e) {
     var h = e.target.closest("th.sort"); if (!h) return;
     var s = h.dataset.s;
-    if (st.sort === s) st.dir = -st.dir; else { st.sort = s; st.dir = ["sku", "cad", "nm"].indexOf(s) >= 0 ? 1 : -1; }
+    if (st.sort === s) st.dir = -st.dir; else { st.sort = s; st.dir = ["sku", "cad", "nm", "sub"].indexOf(s) >= 0 ? 1 : -1; }
     render();
   });
   function pickCad(k) { $("xCad").value = $("xCad").value === k ? "" : k; st.lim = 50; render(); }

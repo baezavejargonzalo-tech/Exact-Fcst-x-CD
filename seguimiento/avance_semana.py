@@ -47,7 +47,7 @@ def leer_fcsts(paths):
                 por_sem[int(c[1:])] = pd.DataFrame({
                     "cadena": f["Cadena"].str.strip().str.upper(), "SKU": f["SAP"].astype(int),
                     "FCST": pd.to_numeric(f[c], errors="coerce").fillna(0), "grupo": None,
-                    "Producto": f["Nombre Producto"]})
+                    "Producto": f["Nombre Producto"], "Subcategoria": f.get("Subcateria", f.get("Subcategoria"))})
         else:
             f = pd.read_excel(path, sheet_name=0)
             f = f[pd.to_numeric(f["SAP"], errors="coerce").notna()].copy()
@@ -57,7 +57,8 @@ def leer_fcsts(paths):
                     por_sem[int(m.group(1))] = pd.DataFrame({
                         "cadena": f["KAM 1"].str.strip().str.upper(), "SKU": f["SAP"].astype(int),
                         "FCST": pd.to_numeric(f[c], errors="coerce").fillna(0),
-                        "grupo": f["Grupo Marketing"], "Producto": f["Nombre Producto"]})
+                        "grupo": f["Grupo Marketing"], "Producto": f["Nombre Producto"],
+                        "Subcategoria": f.get("Subcategoria", f.get("Subcateria"))})
     out = []
     for sem, d in por_sem.items():
         d = d.copy()
@@ -77,6 +78,18 @@ def leer_base(path):
     for m in EXACT_MED:
         b[m] = pd.to_numeric(b[m], errors="coerce").fillna(0)
     return b
+
+
+def mapa_subcategoria(fc, b):
+    """Subcategoría por SKU: la de tu FCST (prefiere la versión con espacios), si no la SubCat DMD de la base."""
+    f = fc[fc["Subcategoria"].notna()].copy()
+    f["sp"] = f["Subcategoria"].astype(str).str.contains(" ")
+    m = f.sort_values(["sp", "sem"], ascending=False).groupby("SKU")["Subcategoria"].first()
+    base = b[b["SubCat DMD"].notna() & (b["SubCat DMD"] != "-")].groupby("SKU")["SubCat DMD"].first()
+    return {**base.to_dict(), **m.to_dict()}
+
+
+SUBCAT = {}
 
 
 def cruzar(fc, b, sem):
@@ -99,7 +112,8 @@ def cruzar(fc, b, sem):
         d[c] = d[c].fillna(0).round(4)
     grupos_con_fcst = set(d.loc[d["FCST"] > 0, "Grupo"])
     d = d[d["Grupo"].isin(grupos_con_fcst) & (d[["FCST"] + EXACT_MED].abs().sum(axis=1) > 0)]
-    return d[["Cadena", "Grupo", "SKU", "Producto", "FCST"] + EXACT_MED]
+    d["Subcategoria"] = d["SKU"].map(SUBCAT).fillna("SIN SUBCATEGORÍA")
+    return d[["Cadena", "Grupo", "Subcategoria", "SKU", "Producto", "FCST"] + EXACT_MED]
 
 
 def exactitud_datos(fc, b, anio):
@@ -115,7 +129,7 @@ def exactitud_datos(fc, b, anio):
             continue
         filas, skus = [], {}
         for r in d.itertuples(index=False):
-            filas.append([int(sem), r.Cadena, int(r.SKU), r.FCST, r[5], r[6], r[7], r[8], r.Grupo])
+            filas.append([int(sem), r.Cadena, int(r.SKU), r.FCST, r[6], r[7], r[8], r[9], r.Grupo])
             a = attrs.loc[r.SKU].to_dict() if r.SKU in attrs.index else {}
             skus[str(int(r.SKU))] = {"n": r.Producto if isinstance(r.Producto, str) else "",
                                      **{c: (None if pd.isna(v) or v == "-" else v) for c, v in a.items()}}
@@ -135,6 +149,8 @@ def exactitud_datos(fc, b, anio):
         filas += semanas[sem]["filas"]
         for k, v in semanas[sem]["skus"].items():
             skus.setdefault(int(k), v)
+    for k, v in skus.items():
+        v["sub"] = SUBCAT.get(k) or v.get("sub")
     return {"anio": anio, "semanas": info,
             "cols": ["sem", "cadena", "sku", "fcst", "sellin", "real", "solic", "queb", "grupo"], "filas": filas, "skus": skus}
 
@@ -147,18 +163,22 @@ def exactitud_excel(ex, por=None):
     d["Real usado"] = d["sem"].map(lambda s: "Sell In (cerrada)" if con_si[s] else "Solicitado (en curso)")
     d["Real"] = d["sellin"].where(d["sem"].map(con_si), d["solic"])
     d["Error"] = (d["Real"] - d["fcst"]).abs().clip(upper=d["fcst"]).where(d["fcst"] > 0, 0)
-    if por:
+    if por == "sub":
+        d["Subcategoría"] = d["sku"].map(lambda k: ex["skus"].get(k, {}).get("sub"))
+        g = d.groupby(["sem", "Real usado", "grupo", "Subcategoría"], as_index=False)[["fcst", "Real", "Error"]].sum()
+    elif por:
         g = d.groupby(["sem", "Real usado", "grupo", "cadena"], as_index=False)[["fcst", "Real", "Error"]].sum()
     else:
         g = d.copy()
         g["Producto"] = g["sku"].map(lambda k: ex["skus"].get(k, {}).get("n", ""))
         g["Categoría"] = g["sku"].map(lambda k: ex["skus"].get(k, {}).get("cat"))
         g["Marca"] = g["sku"].map(lambda k: ex["skus"].get(k, {}).get("marca"))
+        g["Subcategoría"] = g["sku"].map(lambda k: ex["skus"].get(k, {}).get("sub"))
     g["Exactitud"] = (1 - g["Error"] / g["fcst"]).where(g["fcst"] > 0)
     g["Real / FCST"] = (g["Real"] / g["fcst"]).where(g["fcst"] > 0)
     g = g.rename(columns={"sem": "Semana", "grupo": "Grupo", "cadena": "Cadena", "sku": "SKU", "fcst": "FCST (t)",
                           "Real": "Real (t)", "Error": "Error (t)"})
-    keep = [c for c in ["Semana", "Real usado", "Grupo", "Cadena", "SKU", "Producto", "Categoría", "Marca", "FCST (t)",
+    keep = [c for c in ["Semana", "Real usado", "Grupo", "Cadena", "Subcategoría", "SKU", "Producto", "Categoría", "Marca", "FCST (t)",
                         "Real (t)", "Real / FCST", "Exactitud", "Error (t)"] if c in g.columns]
     return g[keep].sort_values(["Semana", "FCST (t)"], ascending=[False, False])
 
@@ -182,7 +202,8 @@ def main():
 
     fc = leer_fcsts(a.fcst)
     b = leer_base(a.base)
-    d = cruzar(fc, b, a.semana)[["Cadena", "Grupo", "SKU", "Producto", "FCST"] + MEDIDAS]
+    SUBCAT.update(mapa_subcategoria(fc, b))
+    d = cruzar(fc, b, a.semana)[["Cadena", "Grupo", "Subcategoria", "SKU", "Producto", "FCST"] + MEDIDAS]
 
     fuera = fc[(fc["sem"] == a.semana) & ~fc["cad_key"].isin(set(b["cad_key"]))].groupby("cadena")["FCST"].sum()
     if len(fuera):
@@ -226,6 +247,7 @@ def main():
         det["Dif (Solic - FCST)"] = det["Solicitado"] - det["FCST"]
         det.sort_values(["Cadena", "FCST"], ascending=[True, False]).to_excel(w, sheet_name="Avance SKU", index=False)
         exactitud_excel(ex, por="cadena").to_excel(w, sheet_name="Exactitud cadena", index=False)
+        exactitud_excel(ex, por="sub").to_excel(w, sheet_name="Exactitud subcategoría", index=False)
         exactitud_excel(ex).to_excel(w, sheet_name="Exactitud SKU", index=False)
 
     datos = {
