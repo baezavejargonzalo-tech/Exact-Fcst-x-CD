@@ -246,6 +246,12 @@
     <div class="tbl-wrap"><table id="tbl"></table></div>
   </section>
 
+  <section class="panel" aria-labelledby="hStock" id="stockPanel" hidden>
+    <h2 id="hStock">SKU con poco stock</h2>
+    <p class="sub" id="stockSub"></p>
+    <div class="tbl-wrap"><table id="stockTbl"></table></div>
+  </section>
+
   <section class="panel hist" aria-labelledby="hHist">
     <h2 id="hHist">Evolución día a día</h2>
     <p class="sub">Avance total de la semana (solicitado / FCST) en cada corte que cargas.</p>
@@ -422,9 +428,40 @@
   }
   $("tbl").addEventListener("click", function (e) { var tr = e.target.closest("tr.cad"); if (tr) toggle(tr); });
   $("tbl").addEventListener("keydown", function (e) { var tr = e.target.closest("tr.cad"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(tr); } });
-  $("aGrupo").addEventListener("change", render);
-  $("aSub").addEventListener("change", render);
-  render();
+  // ---------- stock ----------
+  var S = D.stock;
+  var sst = { sort: "prox", dir: -1 };
+  function renderStock() {
+    if (!S) return;
+    $("stockPanel").hidden = false;
+    var g = $("aGrupo").value, sb = $("aSub").value;
+    var L = S.filas.filter(function (r) { return (!g || r.grupo === g) && (!sb || r.sub === sb); });
+    var crit = L.filter(function (r) { return r.estado === "Crítico"; }).length;
+    var sw = S.semanas;
+    $("stockSub").innerHTML = "Stock país del " + fechaLarga(S.fecha) + " (disponible + XLIB) contra tu FCST nacional. <b>Cobertura</b> = semanas completas que alcanza después de cubrir lo que falta despachar de la S" + sw[0] +
+      " (FCST S" + sw[0] + " − venta real). <b>Crítico</b>: menos de 1 semana; <b>bajo</b>: menos de 1,5. " + crit + " críticos y " + (L.length - crit) + " bajos con estos filtros. Ordenado por el FCST de la próxima semana (los de más volumen primero); toca un encabezado para cambiar el orden.";
+    var key = { cob: "cob", stock: "st", falta: "falta", prox: "f1", queb: "queb", sku: "sku", n: "n", sub: "sub" }[sst.sort];
+    L.forEach(function (r) { r.st = r.disp + r.xlib; r.f1 = r.fsem[1] || 0; });
+    L.sort(function (a, b) { var x = a[key], y = b[key]; if (x === null) return 1; if (y === null) return -1; return (typeof x === "string" ? x.localeCompare(y) : x - y) * sst.dir; });
+    var cols = [["estado", "Estado", "l"], ["sub", "Subcategoría", "l"], ["sku", "SKU", "l"], ["n", "Producto", "l"], ["stock", "Disp+XLIB (t)"], ["tr", "Tránsito (t)"], ["bl", "Bloqueado (t)"],
+      ["falta", "Falta S" + sw[0] + " (t)"], ["prox", "FCST S" + sw[1] + " (t)"], ["cob", "Cobertura (sem)"], ["queb", "Quebrado S" + sw[0] + " (t)"]];
+    $("stockTbl").innerHTML = "<thead><tr>" + cols.map(function (c) { var so = ["estado", "tr", "bl"].indexOf(c[0]) < 0; return '<th class="' + (so ? "sort " : "") + (c[2] || "") + '" data-s="' + c[0] + '"' + (sst.sort === c[0] ? ' aria-sort="' + (sst.dir > 0 ? "ascending" : "descending") + '"' : "") + ">" + esc(c[1]) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      L.map(function (r) {
+        var cobTxt = r.cob === null ? "5+" : r.cob < 0 ? "No cubre S" + sw[0] : nf1.format(r.cob);
+        return '<tr><td class="l"><span class="chip ' + (r.estado === "Crítico" ? "crit" : "sobre") + '">' + r.estado + '</span></td><td class="l sub">' + esc(r.sub || "") + '</td><td class="l">' + r.sku + '</td><td class="prod" style="text-align:left;white-space:normal;min-width:200px">' + esc(r.n) +
+          "</td><td>" + t(r.st) + "</td><td>" + (r.transito ? t(r.transito) : "–") + "</td><td>" + (r.bloq ? t(r.bloq) : "–") + "</td><td>" + t(r.falta) + "</td><td>" + t(r.f1) + '</td><td style="font-weight:700">' + cobTxt + "</td><td>" + (r.queb > 0.05 ? t(r.queb) : "–") + "</td></tr>";
+      }).join("") + "</tbody>";
+    if (!L.length) $("stockTbl").innerHTML = '<tbody><tr><td class="l">Ningún SKU con poco stock para estos filtros.</td></tr></tbody>';
+  }
+  $("stockTbl").addEventListener("click", function (e) {
+    var h = e.target.closest("th.sort"); if (!h) return;
+    var k = h.dataset.s; if (sst.sort === k) sst.dir = -sst.dir; else { sst.sort = k; sst.dir = ["cob", "sku", "n", "sub"].indexOf(k) >= 0 ? 1 : -1; }
+    renderStock();
+  });
+  function renderAll() { render(); renderStock(); }
+  $("aGrupo").addEventListener("change", renderAll);
+  $("aSub").addEventListener("change", renderAll);
+  renderAll();
 })();
 
 // ================= Exactitud =================
@@ -596,7 +633,7 @@
       return (typeof x === "string" ? x.localeCompare(y) : x - y) * st.dir;
     });
     $("xSkuSub").textContent = items.length + " filas. Ordenadas por " + ({ err: "error absoluto", ex: "exactitud", f: "FCST", r: MED[m], ratio: MED[m] + " / FCST", peso: "peso", sku: "SKU", cad: "cadena", nm: "producto", sub: "subcategoría" }[st.sort]) +
-      ". “Resta” son los puntos de exactitud que ese SKU le quita al total filtrado. Toca un encabezado para ordenar.";
+      ". “Resta” son los puntos de exactitud que ese SKU le quita al total filtrado. Ordenado por el FCST de la próxima semana (los de más volumen primero); toca un encabezado para cambiar el orden.";
     var cols = [["cad", "Cadena", "l"], ["sub", "Subcategoría", "l"], ["sku", "SKU", "l"], ["nm", "Producto", "l"], ["f", "FCST (t)"], ["r", MED[m] + " (t)"], ["ratio", MED[m] + "/FCST"], ["ex", "Exactitud"], ["peso", "Peso"], ["err", "Resta"]];
     if (st.lvl === "sku") cols[0] = ["cad", "Cadenas", "l"];
     var th = "<thead><tr>" + cols.map(function (c) { return '<th class="sort ' + (c[2] || "") + '" data-s="' + c[0] + '"' + (st.sort === c[0] ? ' aria-sort="' + (st.dir > 0 ? "ascending" : "descending") + '"' : "") + ">" + esc(c[1]) + "</th>"; }).join("") + "</tr></thead>";

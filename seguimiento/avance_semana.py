@@ -23,6 +23,8 @@ import re
 
 import pandas as pd
 
+import stock as stk
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIDAS = ["Solicitado", "Venta Real", "Quebrados"]
 EXACT_MED = ["Venta Sell IN", "Venta Real", "Solicitado", "Quebrados"]
@@ -198,6 +200,7 @@ def main():
     ap.add_argument("--semana", type=int, required=True)
     ap.add_argument("--anio", type=int, default=dt.date.today().year)
     ap.add_argument("--fecha", default=dt.date.today().isoformat())
+    ap.add_argument("--stock", help="Stock_Pais_stock_<fecha>.xlsx (opcional)")
     a = ap.parse_args()
 
     fc = leer_fcsts(a.fcst)
@@ -250,11 +253,47 @@ def main():
         exactitud_excel(ex, por="sub").to_excel(w, sheet_name="Exactitud subcategoría", index=False)
         exactitud_excel(ex).to_excel(w, sheet_name="Exactitud SKU", index=False)
 
+    stock_rows = None
+    if a.stock:
+        fsem = stk.leer_fcst_semanas(a.fcst, a.semana, a.anio)
+        bs = b[b["sem"] == a.semana]
+        cob = stk.cobertura(stk.leer_stock(a.stock), fsem, bs.groupby("SKU")["Venta Real"].sum(), a.semana)
+        cob["Solicitado S"] = bs.groupby("SKU")["Solicitado"].sum().reindex(cob.index).fillna(0)
+        cob["Quebrado S"] = bs.groupby("SKU")["Quebrados"].sum().reindex(cob.index).fillna(0)
+        cob["Grupo"] = cob.index.map(b.groupby("SKU")["Grupo Marketing"].first()).fillna("")
+        cob["Subcategoria"] = cob.index.map(SUBCAT)
+        cob["Producto"] = cob["Producto"].fillna(cob.index.to_series().map(fc.groupby("SKU")["Producto"].first()))
+        cob = cob[cob["Estado"] != "Sin FCST"]
+        orden = {"Crítico": 0, "Bajo": 1, "OK": 2, "No está en stock país": 3}
+        cob = cob.assign(_o=cob["Estado"].map(orden)).sort_values(["_o", "Cobertura (sem)"]).drop(columns="_o")
+        with pd.ExcelWriter(xlsx, mode="a", engine="openpyxl") as w:
+            out = cob.reset_index().rename(columns={"index": "SKU", "SAP": "SKU", "Venta Real S": f"Venta Real S{a.semana} (t)",
+                                                    "Solicitado S": f"Solicitado S{a.semana} (t)", "Quebrado S": f"Quebrado S{a.semana} (t)",
+                                                    "Falta semana (t)": f"Falta S{a.semana} (t)"})
+            out["Cobertura (sem)"] = out["Cobertura (sem)"].replace(float("inf"), 99)
+            out = out.drop(columns=["en_stock"])
+            out.to_excel(w, sheet_name="Stock cobertura", index=False)
+        sems = [c for c in cob.columns if c.startswith("FCST S")]
+        stock_rows = []
+        # alertas: SKU de las cadenas de la base (tienen grupo) con cobertura baja
+        for k, r in cob[cob["Estado"].isin(["Crítico", "Bajo"]) & (cob["Grupo"] != "")].iterrows():
+            stock_rows.append({"sku": int(k), "n": r["Producto"], "grupo": r["Grupo"], "sub": r["Subcategoria"], "cat": r["Categoria"],
+                               "planta": r["Planta"], "estado": r["Estado"], "cob": None if r["Cobertura (sem)"] == float("inf") else round(r["Cobertura (sem)"], 2),
+                               "alc": None if pd.isna(r["Alcance archivo (sem)"]) else round(r["Alcance archivo (sem)"], 1),
+                               "disp": round(r["Stock disp (t)"], 2), "xlib": round(r["XLIB (t)"], 2), "transito": round(r["Tránsito (t)"], 2),
+                               "bloq": round(r["Bloqueado (t)"], 2), "falta": round(r["Falta semana (t)"], 2),
+                               "prox": round(r["FCST prom. próximas (t)"], 2), "fsem": [round(r[c], 2) for c in sems],
+                               "sol": round(r["Solicitado S"], 2), "queb": round(r["Quebrado S"], 2)})
+        stock_rows = {"fecha": a.fecha, "semanas": [int(c[6:]) for c in sems], "filas": stock_rows,
+                      "n_ok": int(((cob["Estado"] == "OK") & (cob["Grupo"] != "")).sum()),
+                      "n_fuera": int(((cob["Estado"] != "OK") & (cob["Grupo"] == "")).sum())}
+
     datos = {
         "semana": a.semana, "anio": a.anio, "fecha": a.fecha,
         "skus": json.loads(d.to_json(orient="records")),
         "historia": historia,
         "exact": ex,
+        "stock": stock_rows,
     }
     tpl = open(os.path.join(ROOT, "seguimiento", "plantilla.html"), encoding="utf-8").read()
     os.makedirs(os.path.join(ROOT, "dashboard"), exist_ok=True)
