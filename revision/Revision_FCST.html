@@ -1,0 +1,714 @@
+<title>Revisión FCST Semanal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  /* Layout: herramienta de una columna. Carga de archivos y parámetros arriba, resumen por cadena, tabla de SKU desviados con filtros, promociones. Misma línea visual que tus otras herramientas FCST. */
+  :root {
+    --bg: #eef2f8; --bg-grid: #e2e8f4; --surface: #ffffff; --surface-2: #f6f8fc;
+    --ink: #182339; --muted: #5d6983; --border: #d8e0ee; --grid: #e6ebf4;
+    --accent: #2b5fe0; --accent-ink: #ffffff; --accent-soft: #e7edfd;
+    --up: #a8650a; --up-soft: #fbf1e0; --down: #c23b3b; --down-soft: #fbe9e9;
+    --good: #16875a; --good-soft: #e3f6ed; --promo: #7a4fd0; --promo-soft: #f0eafc;
+    --focus: #2b5fe0;
+    --f-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+    --f-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e1420; --bg-grid: #131a29; --surface: #171f30; --surface-2: #1d2638;
+      --ink: #e8ecf7; --muted: #97a3bf; --border: #2a3450; --grid: #232d44;
+      --accent: #5b86f5; --accent-ink: #0e1420; --accent-soft: #202c4c;
+      --up: #e0af52; --up-soft: #362a12; --down: #e2685f; --down-soft: #34201f;
+      --good: #4bc793; --good-soft: #163329; --promo: #a98cf0; --promo-soft: #2a2245;
+      --focus: #5b86f5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e1420; --bg-grid: #131a29; --surface: #171f30; --surface-2: #1d2638;
+    --ink: #e8ecf7; --muted: #97a3bf; --border: #2a3450; --grid: #232d44;
+    --accent: #5b86f5; --accent-ink: #0e1420; --accent-soft: #202c4c;
+    --up: #e0af52; --up-soft: #362a12; --down: #e2685f; --down-soft: #34201f;
+    --good: #4bc793; --good-soft: #163329; --promo: #a98cf0; --promo-soft: #2a2245;
+    --focus: #5b86f5;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px;
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; display: flex; flex-direction: column; gap: 20px; }
+  @media (max-width: 480px) { .wrap { padding-inline: 16px; padding-block: 24px 56px; } }
+  .eyebrow { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+  h1 { font-family: var(--f-display); font-weight: 800; font-size: 28px; line-height: 1.15; margin: 0 0 8px; text-wrap: balance; }
+  h2 { font-family: var(--f-display); font-weight: 700; font-size: 17px; margin: 0; text-wrap: balance; }
+  .lede { color: var(--muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 72ch; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .sub { color: var(--muted); font-size: 13px; line-height: 1.5; margin: -6px 0 0; max-width: 80ch; }
+  .sub b { color: var(--ink); }
+
+  .inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+  .drop { border: 1.5px dashed var(--border); border-radius: 12px; background: var(--surface-2); padding: 18px 14px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
+  .drop:hover, .drop:focus-visible { border-color: var(--accent); outline: none; }
+  .drop.drag { border-color: var(--accent); background: var(--accent-soft); }
+  .drop.filled { border-style: solid; border-color: var(--good); background: var(--good-soft); }
+  .drop-main { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+  .drop-hint { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .drop svg { width: 24px; height: 24px; color: var(--muted); display: block; margin: 0 auto 6px; }
+  input[type="file"] { display: none; }
+  .status { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .status.err { color: var(--down); background: var(--down-soft); border-radius: 8px; padding: 8px 10px; }
+
+  .params { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 140px; min-width: 0; max-width: 220px; }
+  .field.grow { flex: 2 1 220px; max-width: 320px; }
+  .field label, .lbl { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+  .field select, .field input { font: 500 13.5px var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; width: 100%; font-variant-numeric: tabular-nums; }
+  .field select:focus-visible, .field input:focus-visible, button:focus-visible, .wk input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .weeks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .wk { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; cursor: pointer; background: var(--surface); }
+  .wk input { accent-color: var(--accent); margin: 0; }
+  .wk.off { color: var(--muted); background: var(--surface-2); }
+  .wk small { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .wk .tag { color: var(--up); font-weight: 600; }
+
+  button.cta { border: none; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font: 700 14px var(--f-display); padding: 10px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+  button.cta:disabled { opacity: .5; cursor: not-allowed; }
+  button.ghost { font: 600 13px var(--f-body); color: var(--accent); background: none; border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+  button.ghost:hover { background: var(--accent-soft); }
+  .msg { font-size: 12.5px; color: var(--muted); }
+  .msg.err { color: var(--down); } .msg.ok { color: var(--good); }
+  .row-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+  .pill { font: 700 11px var(--f-display); letter-spacing: .08em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; background: var(--up-soft); color: var(--up); }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 12px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+  .kpi .v { font: 800 26px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+  .kpi .k { color: var(--muted); font-size: 12.5px; }
+  .kpi .x { font-size: 12.5px; font-weight: 600; }
+
+  .tbl-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th { text-align: right; font-weight: 600; font-size: 11.5px; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th.l, td.l { text-align: left; }
+  td.tw { white-space: normal; min-width: 180px; max-width: 320px; }
+  td.mut { color: var(--muted); font-size: 12px; }
+  th.sort { cursor: pointer; user-select: none; }
+  th.sort:hover { color: var(--ink); }
+  th.sort[aria-sort="ascending"]::after { content: " ▲"; font-size: 9px; }
+  th.sort[aria-sort="descending"]::after { content: " ▼"; font-size: 9px; }
+  tr.click { cursor: pointer; }
+  tr.click:hover td { background: var(--surface-2); }
+  tr.sel td { background: var(--accent-soft); }
+  tr.tot td { font-weight: 800; border-top: 2px solid var(--ink); }
+  .up { color: var(--up); font-weight: 700; } .down { color: var(--down); font-weight: 700; }
+
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .chip.up { background: var(--up-soft); color: var(--up); }
+  .chip.down { background: var(--down-soft); color: var(--down); }
+  .chip.new { background: var(--accent-soft); color: var(--accent); }
+  .chip.promo { background: var(--promo-soft); color: var(--promo); }
+  .chip.ok { background: var(--good-soft); color: var(--good); }
+  .promo-txt { color: var(--promo); font-size: 12px; white-space: normal; min-width: 200px; max-width: 340px; text-align: left; }
+
+  .spark { display: inline-flex; align-items: flex-end; gap: 2px; height: 22px; vertical-align: middle; }
+  .spark i { display: block; width: 6px; background: var(--grid); border-radius: 2px 2px 0 0; }
+  .spark i.h { background: var(--accent); }
+  .spark i.f { background: var(--up); }
+
+  .dbar { position: relative; height: 16px; min-width: 120px; }
+  .dbar .axis { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--muted); }
+  .dbar .b { position: absolute; top: 3px; height: 10px; border-radius: 2px; }
+  .dbar .b.up { background: var(--up); } .dbar .b.down { background: var(--down); }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; flex-wrap: wrap; }
+  .seg button { font: 600 12.5px var(--f-body); background: var(--surface); color: var(--muted); border: none; padding: 6px 12px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .more { font-size: 12.5px; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 13px; background: var(--surface-2); border-radius: 10px; padding: 14px; }
+  footer { color: var(--muted); font-size: 12px; line-height: 1.6; text-align: center; max-width: 80ch; margin: 0 auto; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">FCST semanal · Revisión antes de cargar</p>
+    <h1>Revisión FCST Semanal</h1>
+    <p class="lede">Sube la base (con el Sell In de las semanas cerradas) y tu archivo de FCST. La página compara el FCST de la semana que vas a cargar contra el promedio del Sell In real de cada cadena × SKU, marca los desvíos grandes y te avisa cuando una promoción podría explicarlos.</p>
+  </header>
+
+  <section class="inputs" aria-label="Archivos">
+    <div class="panel">
+      <h2>1. Base</h2>
+      <div class="drop" id="dropBase" tabindex="0" role="button" aria-label="Subir base">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+        <div class="drop-main">Arrastra la base o haz clic</div>
+        <div class="drop-hint">.xlsx · hoja BASE1: Semana, CADENA, SKU, Venta Sell IN, Solicitado</div>
+      </div>
+      <input type="file" id="fileBase" accept=".xlsx,.xlsm,.xls">
+      <div class="status" id="stBase">Todavía no subiste la base.</div>
+    </div>
+    <div class="panel">
+      <h2>2. FCST</h2>
+      <div class="drop" id="dropFcst" tabindex="0" role="button" aria-label="Subir FCST">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+        <div class="drop-main">Arrastra tu FCST o haz clic</div>
+        <div class="drop-hint">.xlsx · hoja FCST (S33, S34…) con Nombre Promo y Duración Promo</div>
+      </div>
+      <input type="file" id="fileFcst" accept=".xlsx,.xlsm,.xls">
+      <div class="status" id="stFcst">Todavía no subiste el FCST.</div>
+    </div>
+  </section>
+
+  <section class="panel" id="paramPanel" hidden aria-labelledby="hParam">
+    <h2 id="hParam">3. Qué se compara</h2>
+    <div class="params">
+      <div class="field"><label for="pSem">Semana a revisar</label><select id="pSem"></select></div>
+      <div class="field"><label for="pUmbral">Desvío grande desde (%)</label><input type="number" id="pUmbral" value="30" min="5" max="500" step="5"></div>
+      <div class="field"><label for="pMin">y al menos (t)</label><input type="number" id="pMin" value="1" min="0" step="0.5"></div>
+      <div class="field"><label for="pGrupo">Grupo</label><select id="pGrupo"></select></div>
+    </div>
+    <div>
+      <div class="lbl" style="margin-bottom:6px">Semanas cerradas que entran al promedio (Sell In)</div>
+      <div class="weeks" id="weeks"></div>
+    </div>
+    <p class="sub" id="paramNote"></p>
+  </section>
+
+  <div id="results" hidden>
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="row-head">
+        <h2 id="resTitle">Resultado</h2>
+        <span class="pill" id="samplePill" hidden>Datos de ejemplo</span>
+        <button class="cta" id="btnExport" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>
+          Descargar reporte (.xlsx)
+        </button>
+      </div>
+      <div class="msg" id="msgExport" hidden></div>
+
+      <section class="kpis" id="kpis" aria-label="Resumen"></section>
+
+      <section class="panel" aria-labelledby="hCad">
+        <h2 id="hCad">Por cadena</h2>
+        <p class="sub" id="cadSub"></p>
+        <div class="tbl-wrap"><table id="tCad"></table></div>
+      </section>
+
+      <section class="panel" aria-labelledby="hSku">
+        <h2 id="hSku">SKU desviados</h2>
+        <p class="sub" id="skuSub"></p>
+        <div class="filters">
+          <div class="field"><label for="fCad">Cadena</label><select id="fCad"></select></div>
+          <div class="field"><label for="fTipo">Tipo de desvío</label>
+            <select id="fTipo">
+              <option value="desv">Todos los desviados</option>
+              <option value="up">FCST sobre el promedio</option>
+              <option value="down">FCST bajo el promedio</option>
+              <option value="new">FCST sin venta histórica</option>
+              <option value="miss">Venta sin FCST</option>
+              <option value="promo">Solo con promoción</option>
+              <option value="all">Todos los SKU</option>
+            </select></div>
+          <div class="field grow"><label for="fFind">Buscar SKU o producto</label><input type="search" id="fFind" placeholder="Ej. 30000522 o NECTAR" autocomplete="off"></div>
+        </div>
+        <div class="tbl-wrap"><table id="tSku"></table></div>
+        <button class="ghost" id="btnMore" type="button" hidden>Ver más</button>
+      </section>
+
+      <section class="panel" aria-labelledby="hPromo">
+        <h2 id="hPromo">Promociones en tu FCST</h2>
+        <p class="sub" id="promoSub"></p>
+        <div class="tbl-wrap"><table id="tPromo"></table></div>
+      </section>
+    </div>
+  </div>
+
+  <footer>Todo se calcula en tu navegador; los archivos no se envían a ningún servidor.<br>Promedio = Sell In promedio de las semanas cerradas marcadas, por cadena × SKU (Cencosud = Jumbo + Santa Isabel; las cadenas se cruzan sin espacios). Δ = FCST − promedio. Desviado = |Δ %| sobre el umbral y |Δ| sobre el mínimo en toneladas.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var nf1 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var nf0 = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
+  function t(n) { return n === null || !isFinite(n) ? "–" : Math.abs(n) >= 100 ? nf0.format(n) : nf1.format(n); }
+  function sg(n) { return (n > 0 ? "+" : n < 0 ? "−" : "") + t(Math.abs(n)); }
+  function p(x) { return x === null || !isFinite(x) ? "–" : nf0.format(Math.round(x * 100)) + " %"; }
+  function sp(x) { return x === null || !isFinite(x) ? "–" : (x > 0 ? "+" : x < 0 ? "−" : "") + nf0.format(Math.abs(Math.round(x * 100))) + " %"; }
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function key(s) { return String(s == null ? "" : s).toUpperCase().replace(/\s+/g, ""); }
+  function num(v) { if (typeof v === "number") return isFinite(v) ? v : 0; if (v == null || v === "") return 0; var n = parseFloat(String(v).replace(",", ".")); return isNaN(n) ? 0 : n; }
+  function skuOf(v) { var n = parseInt(String(v == null ? "" : v).trim(), 10); return isNaN(n) ? null : n; }
+  function nombre(c) { if (!c) return ""; if (c.length <= 4) return c; return c.toLowerCase().replace(/(^|\s)\S/g, function (m) { return m.toUpperCase(); }).replace(/\bY\b/g, "y"); }
+
+  // ---------- fechas de semana ISO ----------
+  function isoMonday(year, wk) {
+    var jan4 = new Date(Date.UTC(year, 0, 4)), d = jan4.getUTCDay() || 7;
+    return new Date(jan4.getTime() - (d - 1) * 864e5 + (wk - 1) * 7 * 864e5);
+  }
+  function fmtD(d) { return String(d.getUTCDate()).padStart(2, "0") + "-" + String(d.getUTCMonth() + 1).padStart(2, "0"); }
+
+  // ---------- lectura ----------
+  function readWb(file) {
+    return new Promise(function (res, rej) {
+      var r = new FileReader();
+      r.onload = function (e) { try { res(XLSX.read(new Uint8Array(e.target.result), { type: "array", cellDates: true, dense: true })); } catch (err) { rej(err); } };
+      r.onerror = function () { rej(r.error); };
+      r.readAsArrayBuffer(file);
+    });
+  }
+  function rowsOf(ws) { return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null }); }
+  function col(h, re) { for (var i = 0; i < h.length; i++) if (h[i] != null && re.test(String(h[i]).trim())) return i; return -1; }
+
+  var S = { base: null, fcst: null };
+
+  function parseBase(wb) {
+    var name = wb.SheetNames.filter(function (n) { return /^base/i.test(n.trim()); })[0] || wb.SheetNames[0];
+    var rows = rowsOf(wb.Sheets[name]);
+    var h = rows[0] || [];
+    var c = { sem: col(h, /^semana$/i), cad: col(h, /^cadena$/i), sku: col(h, /^sku$/i), si: col(h, /sell\s*in/i), sol: col(h, /^solicitado$/i),
+      vr: col(h, /^venta real$/i), grp: col(h, /grupo marketing/i), prod: col(h, /nombre producto/i) };
+    ["sem", "cad", "sku", "si"].forEach(function (k) { if (c[k] < 0) throw new Error("la hoja " + name + " no tiene la columna " + { sem: "Semana", cad: "CADENA", sku: "SKU", si: "Venta Sell IN" }[k] + "."); });
+    var out = [], grupo = new Map(), prod = new Map(), cadName = new Map(), semTot = new Map();
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i], sku = skuOf(r[c.sku]); if (!sku) continue;
+      var semRaw = String(r[c.sem] == null ? "" : r[c.sem]).trim(), m = /(\d{4})\D?(\d{1,2})$/.exec(semRaw);
+      if (!m) continue;
+      var year = +m[1], sem = +m[2], k = key(r[c.cad]);
+      if (!cadName.has(k)) cadName.set(k, String(r[c.cad]).trim().toUpperCase());
+      if (c.grp >= 0 && r[c.grp] && !grupo.has(sku)) grupo.set(sku, String(r[c.grp]).trim());
+      if (c.prod >= 0 && r[c.prod] && !prod.has(sku)) prod.set(sku, String(r[c.prod]).trim());
+      var si = num(r[c.si]), sol = c.sol >= 0 ? num(r[c.sol]) : 0;
+      out.push({ year: year, sem: sem, cad: k, sku: sku, si: si, sol: sol });
+      var st = semTot.get(sem) || { si: 0, sol: 0, year: year }; st.si += si; st.sol += sol; semTot.set(sem, st);
+    }
+    if (!out.length) throw new Error("no encontré filas con Semana tipo 202641.");
+    return { sheet: name, rows: out, grupo: grupo, prod: prod, cadName: cadName, semTot: semTot };
+  }
+
+  function parseFcst(wb) {
+    var pick = wb.SheetNames.filter(function (n) { return /^(fcst|consolidado 1)$/i.test(n.trim()) || /^fcst\s*\d{1,2}$/i.test(n.trim()); });
+    var name = pick[0] || wb.SheetNames[0];
+    var rows = rowsOf(wb.Sheets[name]), h = rows[0] || [];
+    var c = { sap: col(h, /^sap$/i), cad: col(h, /^(kam 1|cadena)$/i), sub: col(h, /^subcadena/i), subcat: col(h, /^subcat/i), prod: col(h, /nombre producto/i),
+      promo: col(h, /^nombre promo/i), dur: col(h, /^duraci[oó]n promo/i), pact: col(h, /volumen pactado/i),
+      tsem: col(h, /semana vs inicio promo/i), mult: col(h, /multiplicador/i), grp: col(h, /grupo marketing/i) };
+    if (c.sap < 0 || c.cad < 0) throw new Error("la hoja " + name + " no tiene las columnas SAP y Cadena (o KAM 1).");
+    var weeks = [];
+    h.forEach(function (x, i) { var m = /^(?:fcst\s*)?s(?:em)?\.?\s*(\d{1,2})$/i.exec(String(x == null ? "" : x).trim()); if (m) weeks.push({ sem: +m[1], i: i }); });
+    if (!weeks.length) throw new Error("no encontré columnas de semana (S43, SEM 43 o fcst S43) en la hoja " + name + ".");
+    var out = [];
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i], sku = skuOf(r[c.sap]); if (!sku || r[c.cad] == null) continue;
+      var vals = {}; weeks.forEach(function (w) { vals[w.sem] = num(r[w.i]); });
+      var pr = null;
+      if (c.promo >= 0 && r[c.promo] != null && String(r[c.promo]).trim()) {
+        pr = { nombre: String(r[c.promo]).trim(), dur: c.dur >= 0 ? r[c.dur] : null, pact: c.pact >= 0 && r[c.pact] != null ? num(r[c.pact]) : null,
+          tsem: c.tsem >= 0 ? r[c.tsem] : null, mult: c.mult >= 0 && r[c.mult] != null ? num(r[c.mult]) : null };
+      }
+      out.push({ cad: key(r[c.cad]), cadName: String(r[c.cad]).trim().toUpperCase(), subcad: c.sub >= 0 ? String(r[c.sub] || "").trim() : "", sku: sku,
+        prod: c.prod >= 0 ? String(r[c.prod] || "").trim() : "", subcat: c.subcat >= 0 ? String(r[c.subcat] || "").trim() : "",
+        grp: c.grp >= 0 && r[c.grp] ? String(r[c.grp]).trim() : null, v: vals, promo: pr });
+    }
+    return { sheet: name, rows: out, weeks: weeks.map(function (w) { return w.sem; }) };
+  }
+
+  // ---------- promociones: ¿sigue vigente en la semana revisada? ----------
+  var MES = { enero: 0, febrero: 1, marzo: 2, abril: 3, mayo: 4, junio: 5, julio: 6, agosto: 7, septiembre: 8, setiembre: 8, octubre: 9, noviembre: 10, diciembre: 11 };
+  function promoFin(dur, year) {
+    if (dur == null || dur === "") return null;
+    if (dur instanceof Date) return { fin: new Date(Date.UTC(dur.getFullYear(), dur.getMonth(), dur.getDate())), minimo: false };
+    var s = String(dur).toLowerCase(), last = null, m;
+    var re = /(\d{4})-(\d{1,2})-(\d{1,2})|(\d{1,2})[-\/.](\d{1,2})(?:[-\/.](\d{2,4}))?/g;
+    while ((m = re.exec(s))) {
+      if (m[1]) last = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+      else { var y = m[6] ? (+m[6] < 100 ? 2000 + +m[6] : +m[6]) : year; last = new Date(Date.UTC(y, +m[5] - 1, +m[4])); }
+    }
+    // "23.09 a 06.01": rango que cruza el año, el fin cae en el año siguiente
+    var desde = /(\d{1,2})[-\/.](\d{1,2})[^\d]+(\d{1,2})[-\/.](\d{1,2})(?![-\/.]\d)/.exec(s);
+    if (desde && +desde[4] < +desde[2]) last = new Date(Date.UTC(year + 1, +desde[4] - 1, +desde[3]));
+    if (!last) { for (var k in MES) if (s.indexOf(k) >= 0) { var yy = /(\d{4})/.exec(s); last = new Date(Date.UTC(yy ? +yy[1] : year, MES[k] + 1, 0)); } }
+    if (!last) return null;
+    return { fin: last, minimo: /no antes|m[ií]nima/.test(s) };
+  }
+  function durTxt(dur) { if (dur == null) return ""; if (dur instanceof Date) return "hasta " + fmtD(new Date(Date.UTC(dur.getFullYear(), dur.getMonth(), dur.getDate()))); return String(dur); }
+
+  // ---------- cálculo ----------
+  var R = null, st = { sort: "abs", dir: -1, lim: 60, cadSel: "" };
+
+  function semanasCerradas() {
+    var arr = [];
+    S.base.semTot.forEach(function (v, k) { if (v.si > 0) arr.push({ sem: k, si: v.si, year: v.year }); });
+    arr.sort(function (a, b) { return a.sem - b.sem; });
+    var vals = arr.map(function (a) { return a.si; }).slice().sort(function (a, b) { return a - b; });
+    var med = vals.length ? vals[Math.floor(vals.length / 2)] : 0;
+    arr.forEach(function (a) { a.atipica = a.si < 0.75 * med; });
+    return arr;
+  }
+
+  function setupParams() {
+    var cer = semanasCerradas();
+    var lastC = cer.length ? cer[cer.length - 1].sem : 0;
+    var opts = S.fcst.weeks.filter(function (w) { return w > lastC; });
+    if (!opts.length) opts = S.fcst.weeks.slice();
+    var def = opts.indexOf(lastC + 2) >= 0 ? lastC + 2 : opts[0];
+    $("pSem").innerHTML = opts.map(function (w) { return '<option value="' + w + '">S' + w + "</option>"; }).join("");
+    $("pSem").value = def;
+    var recientes = cer.slice(-6);
+    $("weeks").innerHTML = cer.map(function (a) {
+      var on = recientes.indexOf(a) >= 0 && !a.atipica;
+      return '<label class="wk' + (on ? "" : " off") + '"><input type="checkbox" data-sem="' + a.sem + '"' + (on ? " checked" : "") + '><span>S' + a.sem + "</span><small>" + t(a.si) + " t</small>" +
+        (a.atipica ? '<span class="tag">atípica</span>' : "") + "</label>";
+    }).join("");
+    // grupos cubiertos por el FCST
+    var g = new Set();
+    S.fcst.rows.forEach(function (r) { var gg = S.base.grupo.get(r.sku) || r.grp; if (gg && r.v[def] > 0) g.add(gg); });
+    var gl = Array.from(g).sort();
+    $("pGrupo").innerHTML = (gl.length > 1 ? '<option value="">Todos los del FCST</option>' : "") + gl.map(function (x) { return '<option value="' + esc(x) + '">' + esc(nombre(x.replace(/^GRUPO /, ""))) + "</option>"; }).join("");
+    $("paramPanel").hidden = false;
+  }
+
+  function compute() {
+    var sem = +$("pSem").value, umb = Math.max(0, num($("pUmbral").value)) / 100, minT = Math.max(0, num($("pMin").value));
+    var hist = []; document.querySelectorAll("#weeks input:checked").forEach(function (x) { hist.push(+x.dataset.sem); });
+    hist.sort(function (a, b) { return a - b; });
+    document.querySelectorAll("#weeks .wk").forEach(function (l) { l.classList.toggle("off", !l.querySelector("input").checked); });
+    var grpSel = $("pGrupo").value;
+    var gruposFcst = new Set(Array.from($("pGrupo").options).map(function (o) { return o.value; }).filter(Boolean));
+    function enAlcance(sku, gFc) { var g = S.base.grupo.get(sku) || gFc; return grpSel ? g === grpSel : (g ? gruposFcst.has(g) : true); }
+
+    var curso = []; S.base.semTot.forEach(function (v, k) { if (!(v.si > 0) && k < sem && v.sol > 0) curso.push(k); });
+    curso.sort(function (a, b) { return a - b; });
+
+    var M = new Map();
+    function get(cad, sku) {
+      var k = cad + "|" + sku, o = M.get(k);
+      if (!o) { o = { cad: cad, sku: sku, h: {}, f: 0, promo: [], prod: "", subcat: "", subcad: new Set(), solCurso: 0, fPrev: 0 }; M.set(k, o); }
+      return o;
+    }
+    S.fcst.rows.forEach(function (r) {
+      if (!enAlcance(r.sku, r.grp)) return;
+      var o = get(r.cad, r.sku);
+      o.f += r.v[sem] || 0;
+      if (curso.length) o.fPrev += r.v[curso[curso.length - 1]] || 0;
+      if (r.prod) o.prod = r.prod; if (r.subcat) o.subcat = r.subcat; if (r.subcad) o.subcad.add(r.subcad);
+      o.cadName = r.cadName;
+      if (r.promo) o.promo.push(r.promo);
+    });
+    var hs = new Set(hist), cursoLast = curso.length ? curso[curso.length - 1] : null;
+    S.base.rows.forEach(function (r) {
+      if (!enAlcance(r.sku)) return;
+      if (hs.has(r.sem)) { var o = get(r.cad, r.sku); o.h[r.sem] = (o.h[r.sem] || 0) + r.si; }
+      else if (r.sem === cursoLast) { var o2 = M.get(r.cad + "|" + r.sku); if (o2) o2.solCurso += r.sol; }
+    });
+    var year = S.base.rows[0].year, monday = isoMonday(year, sem), sunday = new Date(monday.getTime() + 6 * 864e5);
+
+    var items = [];
+    M.forEach(function (o) {
+      var vals = hist.map(function (w) { return o.h[w] || 0; });
+      var n = vals.length, sum = vals.reduce(function (a, b) { return a + b; }, 0);
+      o.vals = vals; o.prom = n ? sum / n : 0;
+      o.min = n ? Math.min.apply(null, vals) : 0; o.max = n ? Math.max.apply(null, vals) : 0;
+      o.ult = n ? vals[n - 1] : 0;
+      var sd = n > 1 ? Math.sqrt(vals.reduce(function (a, b) { return a + (b - o.prom) * (b - o.prom); }, 0) / (n - 1)) : 0;
+      o.cv = o.prom > 0 ? sd / o.prom : null;
+      o.d = o.f - o.prom; o.dp = o.prom > 0 ? o.d / o.prom : null;
+      o.fuera = n > 0 && (o.f > o.max * 1.0001 || o.f < o.min * 0.9999);
+      if (o.f <= 0 && o.prom <= 0) return;
+      if (o.prom <= 0) o.tipo = o.f >= minT ? "new" : "ok";
+      else if (o.f <= 0) o.tipo = o.prom >= minT ? "miss" : "ok";
+      else if (Math.abs(o.dp) >= umb && Math.abs(o.d) >= minT) o.tipo = o.d > 0 ? "up" : "down";
+      else o.tipo = "ok";
+      o.desv = o.tipo !== "ok";
+      // promo
+      o.promoTxt = ""; o.promoAlerta = "";
+      if (o.promo.length) {
+        var pr = o.promo[0], fin = promoFin(pr.dur, year);
+        var partes = [pr.nombre];
+        if (pr.dur != null && pr.dur !== "") partes.push(durTxt(pr.dur));
+        if (pr.pact) partes.push("pactado " + t(pr.pact) + " t");
+        if (pr.mult) partes.push("multiplicador ×" + nf1.format(pr.mult));
+        o.promoTxt = partes.join(" · ");
+        if (fin && !fin.minimo && fin.fin < monday) o.promoAlerta = "La promo terminó el " + fmtD(fin.fin) + " y la S" + sem + " parte el " + fmtD(monday) + ": si el FCST todavía trae el alza, bájalo.";
+        else if (o.desv && o.tipo === "up") o.promoAlerta = "FCST sobre el promedio con promo activa: el alza puede ser por la promo. Confirma el volumen con el KAM.";
+        else if (o.desv && o.tipo === "down") o.promoAlerta = "FCST bajo el promedio aunque hay promo: el promedio puede venir inflado por la promo o la promo ya no aplica.";
+        else if (o.desv) o.promoAlerta = "Hay promo en este SKU: revisa si explica el desvío.";
+        else o.promoAlerta = "Promo informada; FCST en línea con el promedio.";
+        if (pr.pact && o.f > 0 && Math.abs(o.f - pr.pact) / pr.pact > 0.5 && (!fin || fin.fin >= monday)) o.promoAlerta += " El FCST (" + t(o.f) + " t) está lejos del volumen pactado (" + t(pr.pact) + " t).";
+        if (o.tipo === "ok" || o.tipo === "miss") o.tienePromo = true;
+      }
+      o.prodName = o.prod || S.base.prod.get(o.sku) || "";
+      o.grp = S.base.grupo.get(o.sku) || "";
+      o.cadDisp = o.cadName || S.base.cadName.get(o.cad) || o.cad;
+      o.abs = Math.abs(o.d);
+      items.push(o);
+    });
+
+    // por cadena
+    var cad = new Map();
+    items.forEach(function (o) {
+      var c = cad.get(o.cad) || { cad: o.cad, nombre: o.cadDisp, f: 0, prom: 0, nUp: 0, nDown: 0, nNew: 0, nMiss: 0, nPromo: 0, absDesv: 0, sol: 0 };
+      c.f += o.f; c.prom += o.prom; c.sol += o.solCurso;
+      if (o.tipo === "up") c.nUp++; if (o.tipo === "down") c.nDown++; if (o.tipo === "new") c.nNew++; if (o.tipo === "miss") c.nMiss++;
+      if (o.desv) c.absDesv += o.abs;
+      if (o.promo.length) c.nPromo++;
+      cad.set(o.cad, c);
+    });
+    var cads = Array.from(cad.values()).map(function (c) { c.d = c.f - c.prom; c.dp = c.prom > 0 ? c.d / c.prom : null; return c; }).sort(function (a, b) { return b.f - a.f; });
+    R = { sem: sem, hist: hist, umb: umb, minT: minT, items: items, cads: cads, monday: monday, sunday: sunday, curso: cursoLast, grp: grpSel };
+    $("paramNote").innerHTML = "Semana revisada: <b>S" + sem + "</b> (" + fmtD(monday) + " al " + fmtD(sunday) + "). Promedio con " + hist.length + " semana(s) cerrada(s): " + (hist.length ? hist.map(function (w) { return "S" + w; }).join(", ") : "ninguna") + "." +
+      (cursoLast ? " La S" + cursoLast + " todavía no tiene Sell In; se muestra su solicitado como referencia, pero no entra al promedio." : "");
+    render();
+  }
+
+  function tipoChip(o) {
+    var m = { up: ["up", "Sobre promedio"], down: ["down", "Bajo promedio"], new: ["new", "Sin venta histórica"], miss: ["down", "Venta sin FCST"], ok: ["ok", "En línea"] }[o.tipo];
+    return '<span class="chip ' + m[0] + '">' + m[1] + "</span>";
+  }
+  function spark(o) {
+    var mx = Math.max.apply(null, o.vals.concat([o.f, 1e-9]));
+    return '<span class="spark" title="Sell In ' + R.hist.map(function (w, i) { return "S" + w + ": " + t(o.vals[i]); }).join(", ") + " · FCST S" + R.sem + ": " + t(o.f) + '">' +
+      o.vals.map(function (v) { return '<i class="h" style="height:' + Math.max(1, v / mx * 22) + 'px"></i>'; }).join("") +
+      '<i class="f" style="height:' + Math.max(1, o.f / mx * 22) + 'px"></i></span>';
+  }
+
+  function render() {
+    $("results").hidden = false;
+    var it = R.items, desv = it.filter(function (o) { return o.desv; });
+    var F = it.reduce(function (a, o) { return a + o.f; }, 0), P = it.reduce(function (a, o) { return a + o.prom; }, 0);
+    var promoAlert = it.filter(function (o) { return o.promo.length && (o.desv || /terminó/.test(o.promoAlerta)); });
+    $("resTitle").textContent = "Resultado S" + R.sem;
+    $("kpis").innerHTML =
+      kpi(t(F) + " t", "FCST S" + R.sem, '<span class="x" style="color:var(--muted)">Promedio Sell In ' + t(P) + " t</span>") +
+      kpi(sp(P > 0 ? F / P - 1 : null), "FCST vs promedio", '<span class="x ' + (F >= P ? "up" : "down") + '">' + sg(F - P) + " t</span>") +
+      kpi(String(desv.length), "SKU × cadena desviados", '<span class="x" style="color:var(--muted)">de ' + it.length + " con FCST o venta</span>") +
+      kpi(String(promoAlert.length), "Alertas de promoción", '<span class="x" style="color:var(--promo)">promo que puede explicar un desvío</span>');
+    function kpi(v, k, x) { return '<div class="kpi"><div class="v">' + v + '</div><div class="k">' + k + "</div>" + x + "</div>"; }
+
+    // cadenas
+    var maxDp = Math.max.apply(null, R.cads.map(function (c) { return Math.min(1, Math.abs(c.dp || 0)); }).concat([0.05]));
+    $("cadSub").innerHTML = "FCST S" + R.sem + " contra el Sell In promedio. La barra muestra Δ % (naranja: FCST sobre el promedio; rojo: bajo). Toca una cadena para ver solo sus SKU.";
+    var hc = '<thead><tr><th class="l">Cadena</th><th>FCST S' + R.sem + " (t)</th><th>Promedio (t)</th><th>Δ (t)</th><th>Δ %</th><th></th>" + (R.curso ? "<th>Solic. S" + R.curso + " (t)</th>" : "") + "<th>Sobre</th><th>Bajo</th><th>Sin hist.</th><th>Sin FCST</th><th>Con promo</th></tr></thead><tbody>";
+    R.cads.forEach(function (c) {
+      var w = Math.min(1, Math.abs(c.dp || 0)) / maxDp * 50;
+      hc += '<tr class="click' + (st.cadSel === c.cad ? " sel" : "") + '" data-cad="' + esc(c.cad) + '" tabindex="0"><td class="l"><b>' + esc(nombre(c.nombre)) + "</b></td><td>" + t(c.f) + "</td><td>" + t(c.prom) + '</td><td class="' + (c.d > 0 ? "up" : "down") + '">' + sg(c.d) + '</td><td class="' + (c.d > 0 ? "up" : "down") + '">' + sp(c.dp) +
+        '</td><td><div class="dbar"><span class="axis"></span><span class="b ' + (c.d > 0 ? "up" : "down") + '" style="' + (c.d > 0 ? "left:50%" : "right:50%") + ";width:" + w + '%"></span></div></td>' +
+        (R.curso ? "<td>" + t(c.sol) + "</td>" : "") + "<td>" + (c.nUp || "–") + "</td><td>" + (c.nDown || "–") + "</td><td>" + (c.nNew || "–") + "</td><td>" + (c.nMiss || "–") + "</td><td>" + (c.nPromo || "–") + "</td></tr>";
+    });
+    hc += '<tr class="tot"><td class="l">Total</td><td>' + t(F) + "</td><td>" + t(P) + '</td><td>' + sg(F - P) + "</td><td>" + sp(P > 0 ? F / P - 1 : null) + "</td><td></td>" + (R.curso ? "<td>" + t(R.cads.reduce(function (a, c) { return a + c.sol; }, 0)) + "</td>" : "") + "<td>" +
+      R.cads.reduce(function (a, c) { return a + c.nUp; }, 0) + "</td><td>" + R.cads.reduce(function (a, c) { return a + c.nDown; }, 0) + "</td><td>" + R.cads.reduce(function (a, c) { return a + c.nNew; }, 0) + "</td><td>" + R.cads.reduce(function (a, c) { return a + c.nMiss; }, 0) + "</td><td>" + R.cads.reduce(function (a, c) { return a + c.nPromo; }, 0) + "</td></tr></tbody>";
+    $("tCad").innerHTML = hc;
+
+    var cs = $("fCad").value;
+    $("fCad").innerHTML = '<option value="">Todas</option>' + R.cads.map(function (c) { return '<option value="' + esc(c.cad) + '">' + esc(nombre(c.nombre)) + "</option>"; }).join("");
+    $("fCad").value = st.cadSel || (R.cads.some(function (c) { return c.cad === cs; }) ? cs : "");
+    renderSku();
+    renderPromo();
+  }
+
+  function filtradas() {
+    var cad = $("fCad").value, tipo = $("fTipo").value, q = $("fFind").value.trim().toUpperCase();
+    return R.items.filter(function (o) {
+      if (cad && o.cad !== cad) return false;
+      if (tipo === "desv" && !o.desv) return false;
+      if (["up", "down", "new", "miss"].indexOf(tipo) >= 0 && o.tipo !== tipo) return false;
+      if (tipo === "promo" && !o.promo.length) return false;
+      if (q && String(o.sku).indexOf(q) < 0 && o.prodName.toUpperCase().indexOf(q) < 0) return false;
+      return true;
+    });
+  }
+
+  function renderSku() {
+    var L = filtradas();
+    var k = st.sort;
+    L.sort(function (a, b) { var x = a[k], y = b[k]; if (x === null || x === undefined) return 1; if (y === null || y === undefined) return -1; return (typeof x === "string" ? x.localeCompare(y) : x - y) * st.dir; });
+    $("skuSub").innerHTML = L.length + " fila(s). Desviado = |Δ %| ≥ " + nf0.format(R.umb * 100) + " % y |Δ| ≥ " + nf1.format(R.minT) + " t. Barras: Sell In de cada semana del promedio (azul) y FCST S" + R.sem + " (naranja). <b>Sugerido</b> = promedio; úsalo solo si no hay una razón (promo, nuevo cliente, quiebre) para el cambio. Toca un encabezado para ordenar.";
+    var cols = [["cadDisp", "Cadena", "l"], ["subcat", "Subcategoría", "l"], ["sku", "SKU", "l"], ["prodName", "Producto", "l"], [null, "Historia"], ["prom", "Promedio (t)"], ["f", "FCST S" + R.sem + " (t)"], ["d", "Δ (t)"], ["dp", "Δ %"], ["tipo", "Desvío", "l"]];
+    if (R.curso) cols.splice(7, 0, ["solCurso", "Solic. S" + R.curso + " (t)"]);
+    cols.push(["promoTxt", "Promoción", "l"]);
+    var h = "<thead><tr>" + cols.map(function (c) { return c[0] ? '<th class="sort ' + (c[2] || "") + '" data-s="' + c[0] + '"' + (st.sort === c[0] ? ' aria-sort="' + (st.dir > 0 ? "ascending" : "descending") + '"' : "") + ">" + esc(c[1]) + "</th>" : "<th>" + c[1] + "</th>"; }).join("") + "</tr></thead><tbody>";
+    h += L.slice(0, st.lim).map(function (o) {
+      return '<tr><td class="l">' + esc(nombre(o.cadDisp)) + '</td><td class="l mut tw" style="min-width:120px">' + esc(o.subcat) + '</td><td class="l">' + o.sku + '</td><td class="l tw">' + esc(o.prodName) + "</td><td>" + spark(o) + "</td><td>" + t(o.prom) + "</td><td><b>" + t(o.f) + "</b></td>" +
+        (R.curso ? "<td>" + t(o.solCurso) + "</td>" : "") +
+        '<td class="' + (o.d > 0 ? "up" : o.d < 0 ? "down" : "") + '">' + sg(o.d) + '</td><td class="' + (o.d > 0 ? "up" : o.d < 0 ? "down" : "") + '">' + (o.dp === null ? "nuevo" : sp(o.dp)) + '</td><td class="l">' + tipoChip(o) + (o.fuera && o.desv ? '<div class="mut" style="margin-top:3px">fuera del rango ' + t(o.min) + "–" + t(o.max) + "</div>" : "") +
+        '</td><td class="promo-txt">' + (o.promo.length ? '<span class="chip promo">Promo</span> ' + esc(o.promoTxt) + '<div class="mut" style="margin-top:3px;color:var(--ink)">' + esc(o.promoAlerta) + "</div>" : "") + "</td></tr>";
+    }).join("") + "</tbody>";
+    $("tSku").innerHTML = L.length ? h : '<tbody><tr><td class="l"><div class="empty">Ningún SKU con estos filtros.</div></td></tr></tbody>';
+    $("btnMore").hidden = L.length <= st.lim;
+    $("btnMore").textContent = "Ver " + Math.min(60, L.length - st.lim) + " más de " + (L.length - st.lim);
+  }
+
+  function renderPromo() {
+    var L = R.items.filter(function (o) { return o.promo.length; }).sort(function (a, b) { return (b.desv - a.desv) || (b.abs - a.abs); });
+    $("promoSub").innerHTML = L.length ? L.length + " SKU × cadena con promoción informada en tu FCST. Primero los que además están desviados." : "Tu FCST no trae promociones en las columnas Nombre Promo / Duración Promo para estos SKU.";
+    if (!L.length) { $("tPromo").innerHTML = ""; return; }
+    $("tPromo").innerHTML = '<thead><tr><th class="l">Cadena</th><th class="l">SKU</th><th class="l">Producto</th><th class="l">Promoción</th><th>Promedio (t)</th><th>FCST S' + R.sem + ' (t)</th><th>Δ %</th><th class="l">Desvío</th><th class="l">Alerta</th></tr></thead><tbody>' +
+      L.map(function (o) {
+        return '<tr><td class="l">' + esc(nombre(o.cadDisp)) + '</td><td class="l">' + o.sku + '</td><td class="l tw">' + esc(o.prodName) + '</td><td class="promo-txt">' + esc(o.promoTxt) + "</td><td>" + t(o.prom) + "</td><td><b>" + t(o.f) + '</b></td><td class="' + (o.d > 0 ? "up" : "down") + '">' + (o.dp === null ? "nuevo" : sp(o.dp)) + '</td><td class="l">' + tipoChip(o) + '</td><td class="l tw">' + esc(o.promoAlerta) + "</td></tr>";
+      }).join("") + "</tbody>";
+  }
+
+  // ---------- Excel ----------
+  function buildXlsx() {
+    var wb = XLSX.utils.book_new(), sem = R.sem, tipoTxt = { up: "FCST sobre el promedio", down: "FCST bajo el promedio", new: "FCST sin venta histórica", miss: "Venta sin FCST", ok: "En línea" };
+    function sheet(rows, widths, pctCols, name) {
+      var ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = widths.map(function (w) { return { wch: w }; });
+      if (rows.length) {
+        var keys = Object.keys(rows[0]);
+        for (var r = 0; r < rows.length; r++) keys.forEach(function (k, c) {
+          var cell = ws[XLSX.utils.encode_cell({ r: r + 1, c: c })];
+          if (!cell || cell.t !== "n") return;
+          cell.z = pctCols.indexOf(k) >= 0 ? "0%" : "#,##0.0";
+          if (k === "SKU") cell.z = "0";
+        });
+        ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: keys.length - 1 } }) };
+      }
+      XLSX.utils.book_append_sheet(wb, ws, name);
+    }
+    function row(o) {
+      var r = { "Cadena": nombre(o.cadDisp), "Grupo": o.grp, "Subcategoría": o.subcat, "SKU": o.sku, "Producto": o.prodName };
+      R.hist.forEach(function (w, i) { r["Sell In S" + w + " (t)"] = round(o.vals[i]); });
+      r["Promedio (t)"] = round(o.prom); r["Mín (t)"] = round(o.min); r["Máx (t)"] = round(o.max);
+      if (R.curso) r["Solicitado S" + R.curso + " (t)"] = round(o.solCurso);
+      r["FCST S" + sem + " (t)"] = round(o.f); r["Δ (t)"] = round(o.d); r["Δ %"] = o.dp === null ? null : round(o.dp, 4);
+      r["Desvío"] = tipoTxt[o.tipo]; r["Fuera de rango histórico"] = o.fuera ? "Sí" : "";
+      r["Sugerido (promedio, t)"] = round(o.prom);
+      r["Promoción"] = o.promoTxt; r["Alerta promoción"] = o.promo.length ? o.promoAlerta : "";
+      return r;
+    }
+    function round(x, d) { if (x === null || !isFinite(x)) return null; var m = Math.pow(10, d || 3); return Math.round(x * m) / m; }
+    var widths = [22, 26, 28, 11, 40].concat(R.hist.map(function () { return 12; })).concat([12, 10, 10]).concat(R.curso ? [16] : []).concat([13, 10, 9, 24, 12, 14, 48, 70]);
+
+    var cadRows = R.cads.map(function (c) {
+      var r = { "Cadena": nombre(c.nombre), ["FCST S" + sem + " (t)"]: round(c.f), "Promedio Sell In (t)": round(c.prom), "Δ (t)": round(c.d), "Δ %": c.dp === null ? null : round(c.dp, 4) };
+      if (R.curso) r["Solicitado S" + R.curso + " (t)"] = round(c.sol);
+      r["SKU sobre promedio"] = c.nUp; r["SKU bajo promedio"] = c.nDown; r["FCST sin venta histórica"] = c.nNew; r["Venta sin FCST"] = c.nMiss; r["SKU con promo"] = c.nPromo; r["Σ |Δ| desviados (t)"] = round(c.absDesv);
+      return r;
+    });
+    sheet(cadRows, [26, 14, 18, 10, 9].concat(R.curso ? [18] : []).concat([16, 16, 22, 14, 13, 18]), ["Δ %"], "Resumen por cadena");
+    var desv = R.items.filter(function (o) { return o.desv; }).sort(function (a, b) { return a.cadDisp.localeCompare(b.cadDisp) || b.abs - a.abs; });
+    sheet(desv.map(row), widths, ["Δ %"], "SKU desviados");
+    var pr = R.items.filter(function (o) { return o.promo.length; }).sort(function (a, b) { return (b.desv - a.desv) || b.abs - a.abs; });
+    sheet(pr.map(row), widths, ["Δ %"], "Alertas promoción");
+    var all = R.items.slice().sort(function (a, b) { return a.cadDisp.localeCompare(b.cadDisp) || b.f - a.f; });
+    sheet(all.map(row), widths, ["Δ %"], "Detalle completo");
+    var par = [
+      { "Parámetro": "Semana revisada", "Valor": "S" + sem + " (" + fmtD(R.monday) + " al " + fmtD(R.sunday) + ")" },
+      { "Parámetro": "Semanas en el promedio (Sell In)", "Valor": R.hist.map(function (w) { return "S" + w; }).join(", ") },
+      { "Parámetro": "Umbral de desvío", "Valor": nf0.format(R.umb * 100) + " % y " + nf1.format(R.minT) + " t" },
+      { "Parámetro": "Grupo", "Valor": R.grp || "Todos los del FCST" },
+      { "Parámetro": "Base", "Valor": S.baseName + " (hoja " + S.base.sheet + ")" },
+      { "Parámetro": "FCST", "Valor": S.fcstName + " (hoja " + S.fcst.sheet + ")" },
+      { "Parámetro": "Cómo se calcula", "Valor": "Promedio = Sell In promedio por cadena × SKU de las semanas marcadas. Δ = FCST − promedio. Desviado = |Δ %| sobre el umbral y |Δ| sobre el mínimo." }
+    ];
+    sheet(par, [32, 110], [], "Parámetros");
+    return XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  }
+
+  var downloadsP = (window.claude && window.claude.use) ? window.claude.use("downloads") : Promise.resolve(undefined);
+  $("btnExport").addEventListener("click", function () {
+    var btn = this, msg = $("msgExport");
+    btn.disabled = true; msg.hidden = true;
+    var data, fname = "Revision_FCST_S" + R.sem + ".xlsx";
+    try { data = buildXlsx(); } catch (e) { msg.hidden = false; msg.className = "msg err"; msg.textContent = "No se pudo armar el Excel: " + e.message; btn.disabled = false; return; }
+    downloadsP.then(function (dl) {
+      if (dl === undefined) {
+        var url = URL.createObjectURL(new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+        var a = document.createElement("a"); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+        msg.hidden = false; msg.className = "msg ok"; msg.textContent = "Reporte descargado: " + fname;
+        return;
+      }
+      if (dl === null) { msg.hidden = false; msg.className = "msg err"; msg.textContent = "Esta vista no permite descargar archivos. Abre la página en claude.ai para descargar el reporte."; return; }
+      return dl.save({ filename: fname, data: new Blob([data]) }).then(function () {
+        msg.hidden = false; msg.className = "msg ok"; msg.textContent = "Reporte guardado: " + fname;
+      }, function (err) {
+        msg.hidden = false; msg.className = "msg err";
+        msg.textContent = err && err.code === "declined" ? "Descarga cancelada." : err && err.code === "rate_limited" ? "Ya hay una descarga pendiente; espera un momento y vuelve a intentar." : "No se pudo guardar el archivo (" + (err && err.code || "error") + ").";
+      });
+    }).then(function () { btn.disabled = false; }, function () { btn.disabled = false; });
+  });
+
+  // ---------- eventos ----------
+  function wireDrop(dropId, inputId, onFile) {
+    var d = $(dropId), inp = $(inputId);
+    d.addEventListener("click", function () { inp.click(); });
+    d.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inp.click(); } });
+    inp.addEventListener("change", function () { if (inp.files[0]) onFile(inp.files[0]); inp.value = ""; });
+    ["dragover", "dragenter"].forEach(function (ev) { d.addEventListener(ev, function (e) { e.preventDefault(); d.classList.add("drag"); }); });
+    ["dragleave", "drop"].forEach(function (ev) { d.addEventListener(ev, function (e) { e.preventDefault(); d.classList.remove("drag"); }); });
+    d.addEventListener("drop", function (e) { if (e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]); });
+  }
+  function load(kind, file) {
+    var stEl = $(kind === "base" ? "stBase" : "stFcst"), drop = $(kind === "base" ? "dropBase" : "dropFcst");
+    stEl.className = "status"; stEl.textContent = "Leyendo " + file.name + "…";
+    readWb(file).then(function (wb) {
+      if (kind === "base") {
+        S.base = parseBase(wb); S.baseName = file.name;
+        var cer = []; S.base.semTot.forEach(function (v, k) { cer.push("S" + k + (v.si > 0 ? "" : " (sin Sell In)")); });
+        stEl.innerHTML = "<b>" + esc(file.name) + "</b> · hoja " + esc(S.base.sheet) + " · " + nf0.format(S.base.rows.length) + " filas · semanas " + cer.sort().join(", ") + ".";
+      } else {
+        S.fcst = parseFcst(wb); S.fcstName = file.name;
+        var np = S.fcst.rows.filter(function (r) { return r.promo; }).length;
+        stEl.innerHTML = "<b>" + esc(file.name) + "</b> · hoja " + esc(S.fcst.sheet) + " · " + nf0.format(S.fcst.rows.length) + " filas de SKU · semanas S" + S.fcst.weeks[0] + " a S" + S.fcst.weeks[S.fcst.weeks.length - 1] + " · " + np + " con promoción.";
+      }
+      drop.classList.add("filled"); drop.querySelector(".drop-main").textContent = file.name;
+      $("samplePill").hidden = true;
+      if (S.base && S.fcst) { st.cadSel = ""; setupParams(); compute(); }
+    }).catch(function (e) {
+      stEl.className = "status err"; stEl.textContent = "No pude leer " + file.name + ": " + e.message;
+    });
+  }
+  wireDrop("dropBase", "fileBase", function (f) { load("base", f); });
+  wireDrop("dropFcst", "fileFcst", function (f) { load("fcst", f); });
+  ["pSem", "pUmbral", "pMin", "pGrupo"].forEach(function (id) { $(id).addEventListener("change", function () { st.lim = 60; compute(); }); });
+  $("weeks").addEventListener("change", function () { st.lim = 60; compute(); });
+  ["fCad", "fTipo"].forEach(function (id) { $(id).addEventListener("change", function () { st.cadSel = $("fCad").value; st.lim = 60; render(); }); });
+  $("fFind").addEventListener("input", function () { st.lim = 60; renderSku(); });
+  $("btnMore").addEventListener("click", function () { st.lim += 60; renderSku(); });
+  $("tSku").addEventListener("click", function (e) {
+    var h = e.target.closest("th.sort"); if (!h) return;
+    var k = h.dataset.s; if (st.sort === k) st.dir = -st.dir; else { st.sort = k; st.dir = ["cadDisp", "subcat", "prodName", "tipo", "promoTxt", "sku"].indexOf(k) >= 0 ? 1 : -1; }
+    renderSku();
+  });
+  function pickCad(tr) { var c = tr.dataset.cad; st.cadSel = st.cadSel === c ? "" : c; st.lim = 60; render(); $("hSku").scrollIntoView({ behavior: "smooth", block: "start" }); }
+  $("tCad").addEventListener("click", function (e) { var tr = e.target.closest("tr[data-cad]"); if (tr) pickCad(tr); });
+  $("tCad").addEventListener("keydown", function (e) { var tr = e.target.closest("tr[data-cad]"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pickCad(tr); } });
+
+  // ---------- ejemplo inicial (marcado como ejemplo) ----------
+  (function ejemplo() {
+    var semanas = [36, 37, 38, 39, 40, 41];
+    function mk(cad, sku, prod, sub, hist, f, promo) { return { cad: cad, sku: sku, prod: prod, sub: sub, hist: hist, f: f, promo: promo }; }
+    var ex = [
+      mk("WALMART", 1001, "LECHE ENTERA 12X1LT (ejemplo)", "LECHE BLANCA", [60, 62, 30, 58, 61, 63], 95, null),
+      mk("WALMART", 1002, "NECTAR DURAZNO 30X200ML (ejemplo)", "NECTAR", [10, 11, 6, 9, 10, 12], 10.5, { nombre: "Lista 4", dur: new Date(2026, 9, 10), pact: null, mult: null }),
+      mk("CENCOSUD", 1003, "YOGUR MORA 30X200GR (ejemplo)", "YOGUR", [14, 15, 8, 13, 14, 15], 6, null),
+      mk("TOTTUS", 1004, "JUGO MANZANA 30X200ML (ejemplo)", "JUGO", [0.4, 0.5, 0.3, 0.6, 1.4, 1.6], 3.2, { nombre: "Promo Tottus", dur: "Desde 28-09-2026, fin no antes del 12-11-2026", pact: null, mult: 2.7 }),
+      mk("CANAL TRADICIONAL", 1005, "MANJAR BOLSA 10X920GR (ejemplo)", "MANJAR", [3, 4, 2, 3, 4, 3], 0, null)
+    ];
+    S.base = { sheet: "BASE1", rows: [], grupo: new Map(), prod: new Map(), cadName: new Map(), semTot: new Map() };
+    ex.forEach(function (e) {
+      S.base.cadName.set(key(e.cad), e.cad); S.base.grupo.set(e.sku, "GRUPO EJEMPLO");
+      semanas.forEach(function (w, i) { S.base.rows.push({ year: 2026, sem: w, cad: key(e.cad), sku: e.sku, si: e.hist[i], sol: e.hist[i] }); var s = S.base.semTot.get(w) || { si: 0, sol: 0, year: 2026 }; s.si += e.hist[i]; S.base.semTot.set(w, s); });
+      S.base.rows.push({ year: 2026, sem: 42, cad: key(e.cad), sku: e.sku, si: 0, sol: e.hist[5] * 0.6 });
+    });
+    S.base.semTot.set(42, { si: 0, sol: 50, year: 2026 });
+    S.fcst = { sheet: "FCST", weeks: [42, 43, 44], rows: ex.map(function (e) { return { cad: key(e.cad), cadName: e.cad, subcad: e.cad, sku: e.sku, prod: e.prod, subcat: e.sub, grp: "GRUPO EJEMPLO", v: { 42: e.hist[5], 43: e.f, 44: e.f }, promo: e.promo }; }) };
+    S.baseName = "ejemplo"; S.fcstName = "ejemplo";
+    $("samplePill").hidden = false;
+    setupParams(); compute();
+    S.base = null; S.fcst = null;
+  })();
+})();
+</script>

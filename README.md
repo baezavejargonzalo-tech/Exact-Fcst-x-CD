@@ -19,3 +19,10 @@ Pestaña "Exactitud" del dashboard y hojas "Exactitud cadena" / "Exactitud SKU" 
 - Por cadena × SKU: `1 − min(|Real − FCST|, FCST) / FCST` (entre 0 y 100 %).
 - Totales (cadena, categoría, total): ponderados por el peso del SKU en el FCST, equivale a `1 − Σ error / Σ FCST`.
 - Semana cerrada (con Sell In): se mide contra Sell In. Semana en curso y la siguiente: contra Solicitado (las entregas se hacen durante la semana).
+
+## Revisión semanal del FCST (`revision/Revision_FCST.html`)
+
+Página que corre en el navegador: subes la base (hoja BASE1) y el FCST (hoja FCST, CONSOLIDADO 1 o fcst NN).
+Compara el FCST de la semana elegida contra el Sell In promedio de las semanas cerradas (por defecto las últimas 6, sin semanas atípicas),
+por cadena × SKU, marca los desvíos (|Δ %| ≥ 30 % y |Δ| ≥ 1 t por defecto), avisa cuando hay promociones en el FCST
+(vigentes, terminadas o con volumen pactado lejano) y descarga el reporte en Excel.
