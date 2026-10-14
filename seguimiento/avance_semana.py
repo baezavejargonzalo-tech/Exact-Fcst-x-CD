@@ -37,30 +37,29 @@ def clave(s):
 
 
 def leer_fcsts(paths):
-    """Devuelve filas largas: sem, cad_key, cadena, SKU, FCST, grupo_key, Producto."""
+    """Devuelve filas largas: sem, cad_key, cadena, SKU, FCST, grupo_key, Producto.
+
+    En cada archivo se leen las hojas "FCST" (ancha, S33..S44), "CONSOLIDADO 1" (KAM 1 + "SEM NN")
+    y "fcst NN" (Cadena + "fcst SNN"); si no hay ninguna, la primera hoja."""
     por_sem = {}
     for path in paths:
         hojas = pd.ExcelFile(path).sheet_names
-        if "FCST" in hojas:
-            f = pd.read_excel(path, sheet_name="FCST")
+        usar = [h for h in hojas if h.strip().upper() in ("FCST", "CONSOLIDADO 1") or re.fullmatch(r"fcst\s*\d{1,2}", h.strip(), re.I)]
+        for hoja in usar or [hojas[0]]:
+            f = pd.read_excel(path, sheet_name=hoja)
+            if "SAP" not in f.columns:
+                continue
             f = f[pd.to_numeric(f["SAP"], errors="coerce").notna()].copy()
-            cols = [c for c in f.columns if re.fullmatch(r"S\d{1,2}", str(c))]
-            for c in cols:
-                por_sem[int(c[1:])] = pd.DataFrame({
-                    "cadena": f["Cadena"].str.strip().str.upper(), "SKU": f["SAP"].astype(int),
-                    "FCST": pd.to_numeric(f[c], errors="coerce").fillna(0), "grupo": None,
-                    "Producto": f["Nombre Producto"], "Subcategoria": f.get("Subcateria", f.get("Subcategoria"))})
-        else:
-            f = pd.read_excel(path, sheet_name=0)
-            f = f[pd.to_numeric(f["SAP"], errors="coerce").notna()].copy()
+            cad = "KAM 1" if "KAM 1" in f.columns else "Cadena"
+            sub = f.get("Subcategoria", f.get("Subcateria"))
             for c in f.columns:
-                m = re.fullmatch(r"SEM\.?\s*(\d{1,2}).*", str(c).strip(), re.I)
+                m = re.fullmatch(r"(?:fcst\s*)?S(?:EM)?\.?\s*(\d{1,2})(?:\s*\(.*\))?", str(c).strip(), re.I)
                 if m:
                     por_sem[int(m.group(1))] = pd.DataFrame({
-                        "cadena": f["KAM 1"].str.strip().str.upper(), "SKU": f["SAP"].astype(int),
+                        "cadena": f[cad].astype(str).str.strip().str.upper(), "SKU": f["SAP"].astype(int),
                         "FCST": pd.to_numeric(f[c], errors="coerce").fillna(0),
-                        "grupo": f["Grupo Marketing"], "Producto": f["Nombre Producto"],
-                        "Subcategoria": f.get("Subcategoria", f.get("Subcateria"))})
+                        "grupo": f["Grupo Marketing"] if "Grupo Marketing" in f.columns else None,
+                        "Producto": f["Nombre Producto"], "Subcategoria": sub})
     out = []
     for sem, d in por_sem.items():
         d = d.copy()
