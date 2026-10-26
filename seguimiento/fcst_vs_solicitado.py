@@ -43,7 +43,7 @@ def main():
     m = re.search(r"S(\d+)[/\\]foto_(\d{4}-\d{2}-\d{2})", foto)
     sem, fecha = m.group(1), m.group(2)
     d = pd.read_csv(foto)
-    d["Cadena"] = d["Cadena"].str.title().str.replace(" Y ", " y ")
+    d["Cadena"] = d["Cadena"].str.title().str.replace(" Y ", " y ").replace({"Ccu": "CCU", "Alvi": "ALVI"})
     d["Subcategoria"] = d["Subcategoria"].fillna("SIN SUBCATEGORÍA")
 
     cad = con_total(tabla(d.groupby("Cadena", as_index=False)[MED].sum()).sort_values("FCST (t)", ascending=False), "Cadena")
