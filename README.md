@@ -26,3 +26,8 @@ Página que corre en el navegador: subes la base (hoja BASE1) y el FCST (hoja FC
 Compara el FCST de la semana elegida contra el Sell In promedio de las semanas cerradas (por defecto las últimas 6, sin semanas atípicas),
 por cadena × SKU, marca los desvíos (|Δ %| ≥ 30 % y |Δ| ≥ 1 t por defecto), avisa cuando hay promociones en el FCST
 (vigentes, terminadas o con volumen pactado lejano) y descarga el reporte en Excel.
+
+## Alertas de empuje (`seguimiento/empuje.py`)
+
+`python seguimiento/empuje.py data/S44/foto_2026-10-26.csv` lee la foto del día y arma `reportes/Empuje_S<sem>_<fecha>.xlsx`
+con los SKU sin pedidos o que van a menos de la mitad del avance de su cadena (FCST ≥ 1 t), separando los que tienen quiebre.
